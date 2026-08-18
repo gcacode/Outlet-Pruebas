@@ -1,46 +1,83 @@
-[
-  {
-    "id_producto": "OUT-001",
-    "nombre": "Camiseta de Fútbol (Post-Mundial)",
-    "categorias": ["Ropa", "Deportes"],
-    "subcategorias": ["Deportiva", "Oficial"],
-    "precio_referencial": 60.00,
-    "precio_outlet": 25.00,
-    "disponible": true,
-    "imagen_url": "./assets/img/camiseta-futbol.jpg",
-    "mensaje_compra": "Hola! Me interesa la Camiseta (OUT-001)."
-  },
-  {
-    "id_producto": "OUT-005",
-    "nombre": "Gorra Autografiada",
-    "categorias": ["Ropa", "Coleccionable"],
-    "subcategorias": ["Accesorios", "Memorabilia"],
-    "precio_referencial": 50.00,
-    "precio_outlet": 30.00,
-    "disponible": true,
-    "imagen_url": "./assets/img/gorra.jpg",
-    "mensaje_compra": "Hola! Me interesa la Gorra (OUT-005)."
-  },
-  {
-    "id_producto": "OUT-002",
-    "nombre": "Balón de Fútbol Conmemorativo",
-    "categorias": ["Deportes", "Coleccionable"],
-    "subcategorias": ["Accesorios", "Memorabilia"],
-    "precio_referencial": 40.00,
-    "precio_outlet": 15.00,
-    "disponible": true,
-    "imagen_url": "./assets/img/balon-futbol.jpg",
-    "mensaje_compra": "Hola! Me interesa el Balón (OUT-002)."
-  },
-  {
-    "id_producto": "OUT-003",
-    "nombre": "Kit de Skincare (3 piezas)",
-    "categorias": ["Belleza"],
-    "subcategorias": ["Cuidado Facial"],
-    "precio_referencial": 45.00,
-    "precio_outlet": 20.00,
-    "disponible": true,
-    "imagen_url": "./assets/img/kit-skincare.jpg",
-    "mensaje_compra": "Hola! Me interesa el Kit (OUT-003)."
-  }
-]
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo - Outlet Familiar</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
+        .grid-catalogo { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; }
+        .tarjeta-navegacion { background: white; padding: 30px 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; text-decoration: none; color: #333; display: block; transition: transform 0.2s; }
+        .tarjeta-navegacion:hover { transform: translateY(-5px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .tarjeta-producto { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; }
+        .tarjeta-producto img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; background-color: #eee; }
+        .btn-whatsapp { display: block; background: #25D366; color: white; padding: 12px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px; }
+        #titulo-principal { text-align: center; color: #333; margin-bottom: 30px; text-transform: capitalize; }
+        .btn-volver { display: inline-block; margin-bottom: 20px; color: #0066cc; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div style="max-width: 1000px; margin: 0 auto;">
+        <a href="index.html" class="btn-volver" id="link-volver" style="display: none;">← Volver</a>
+    </div>
+
+    <h2 id="titulo-principal">Nuestras Categorías</h2>
+    <div id="contenedor-dinamico" class="grid-catalogo"></div>
+
+    <script>
+        const numeroWhatsApp = "593XXXXXXXXX"; // <--- CAMBIA ESTO
+        const urlParams = new URLSearchParams(window.location.search);
+        const catFiltro = urlParams.get('categoria');
+        const subFiltro = urlParams.get('subcategoria');
+
+        fetch('inventario.json')
+            .then(res => res.json())
+            .then(productos => {
+                const contenedor = document.getElementById('contenedor-dinamico');
+                const titulo = document.getElementById('titulo-principal');
+                const btnVolver = document.getElementById('link-volver');
+
+                // Nivel 3: Productos
+                if (catFiltro && subFiltro) {
+                    titulo.innerText = `${catFiltro} > ${subFiltro}`;
+                    btnVolver.style.display = "inline-block";
+                    btnVolver.href = `?categoria=${encodeURIComponent(catFiltro)}`;
+                    
+                    productos.filter(p => p.categorias.includes(catFiltro) && p.subcategorias.includes(subFiltro))
+                             .forEach(p => {
+                        contenedor.innerHTML += `
+                            <div class="tarjeta-producto">
+                                <img src="${p.imagen_url}" onerror="this.src='https://via.placeholder.com/250'">
+                                <h3>${p.nombre}</h3>
+                                <p>$${p.precio_outlet.toFixed(2)}</p>
+                                <a href="https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(p.mensaje_compra)}" class="btn-whatsapp">Comprar</a>
+                            </div>`;
+                    });
+                }
+                // Nivel 2: Subcategorías
+                else if (catFiltro) {
+                    titulo.innerText = catFiltro;
+                    btnVolver.style.display = "inline-block";
+                    btnVolver.href = "index.html";
+                    
+                    const subs = new Set();
+                    productos.filter(p => p.categorias.includes(catFiltro))
+                             .forEach(p => p.subcategorias.forEach(s => subs.add(s)));
+                    
+                    subs.forEach(s => {
+                        contenedor.innerHTML += `<a href="?categoria=${encodeURIComponent(catFiltro)}&subcategoria=${encodeURIComponent(s)}" class="tarjeta-navegacion"><h3>${s}</h3></a>`;
+                    });
+                }
+                // Nivel 1: Categorías
+                else {
+                    const cats = new Set();
+                    productos.forEach(p => p.categorias.forEach(c => cats.add(c)));
+                    cats.forEach(c => {
+                        contenedor.innerHTML += `<a href="?categoria=${encodeURIComponent(c)}" class="tarjeta-navegacion"><h3>${c}</h3></a>`;
+                    });
+                }
+            });
+    </script>
+</body>
+</html>
