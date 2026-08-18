@@ -32,20 +32,19 @@
     <div id="contenedor-catalogo" class="grid-catalogo"></div>
 
     <script>
-        // 1. TU NÚMERO DE WHATSAPP
+        // ¡IMPORTANTE! Cambia las X por tu número de WhatsApp
         const numeroWhatsApp = "593XXXXXXXXX"; 
 
-        // 2. LEER LOS PARÁMETROS DE LA URL (Ej: ?categoria=ropa&subcategoria=deportiva)
+        // LEER LOS PARÁMETROS DE LA URL
         const urlParams = new URLSearchParams(window.location.search);
         const categoriaFiltro = urlParams.get('categoria');
         const subcategoriaFiltro = urlParams.get('subcategoria');
 
-        // 3. ACTUALIZAR LOS TÍTULOS VISUALMENTE
+        // ACTUALIZAR LOS TÍTULOS VISUALMENTE
         if (categoriaFiltro) {
             document.getElementById('titulo-seccion').innerText = "Categoría: " + categoriaFiltro;
             document.getElementById('btn-volver').style.display = "inline-block";
             
-            // Mostrar subcategoría si existe en el enlace
             if (subcategoriaFiltro) {
                  const subtitulo = document.getElementById('subtitulo-seccion');
                  subtitulo.innerText = "Subcategoría: " + subcategoriaFiltro;
@@ -53,7 +52,7 @@
             }
         }
 
-        // 4. CARGAR Y FILTRAR EL INVENTARIO
+        // CARGAR Y FILTRAR EL INVENTARIO
         fetch('inventario.json')
             .then(respuesta => respuesta.json())
             .then(productos => {
@@ -63,12 +62,9 @@
                 productos.forEach(producto => {
                     let mostrarProducto = false;
 
-                    // Si NO hay ningún filtro en la URL, se muestran todos los disponibles
                     if (!categoriaFiltro && !subcategoriaFiltro) {
                         mostrarProducto = true;
-                    } 
-                    // Si HAY filtros, validamos:
-                    else {
+                    } else {
                         const coincideCat = categoriaFiltro ? producto.categoria.toLowerCase().includes(categoriaFiltro.toLowerCase()) : true;
                         const coincideSubCat = subcategoriaFiltro ? (producto.subcategoria && producto.subcategoria.toLowerCase().includes(subcategoriaFiltro.toLowerCase())) : true;
 
@@ -77,13 +73,11 @@
                         }
                     }
 
-                    // Renderizar si cumple las condiciones y está disponible
                     if(producto.disponible === true && mostrarProducto) {
                         productosMostrados++;
                         const mensajeCodificado = encodeURIComponent(producto.mensaje_compra);
                         const linkWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${mensajeCodificado}`;
 
-                        // Mostramos "Categoria > Subcategoria" en la etiqueta visual
                         const textoEtiqueta = producto.subcategoria ? `${producto.categoria} / ${producto.subcategoria}` : producto.categoria;
 
                         const tarjetaHTML = `
@@ -100,7 +94,6 @@
                     }
                 });
 
-                // Mensaje si no se encontró nada
                 if (productosMostrados === 0) {
                     contenedor.innerHTML = "<p style='text-align:center; grid-column: 1 / -1;'>No hay productos disponibles en esta sección por el momento.</p>";
                 }
