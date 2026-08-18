@@ -26,11 +26,12 @@
     <div class="container">
         <a href="index.html" id="btn-back" class="btn-main" style="display:none;">← Volver</a>
         <h1 id="titulo">Nuestras Categorías</h1>
-        <div id="contenedor" class="grid"></div>
+        <div id="contenedor" class="grid">Cargando catálogo...</div>
     </div>
 
     <script>
         const WA_NUMERO = "593XXXXXXXXX"; 
+        // Usamos la URL de exportación directa que es más estable
         const CSV_URL = "https://docs.google.com/spreadsheets/d/168Qg4rnF4Kjj0Y8RKzQYov4ek3t0vrtarHTcc9qVxo/export?format=csv&gid=0";
 
         const METADATA_ESTRUCTURA = {
@@ -70,7 +71,7 @@
 
         fetch(CSV_URL)
             .then(res => {
-                if (!res.ok) throw new Error('Error al conectar con la hoja');
+                if (!res.ok) throw new Error('Servidor respondió: ' + res.status);
                 return res.text();
             })
             .then(csvText => {
@@ -78,6 +79,8 @@
                 const cont = document.getElementById('contenedor');
                 const tit = document.getElementById('titulo');
                 const btn = document.getElementById('btn-back');
+
+                cont.innerHTML = ''; // Limpiar el "Cargando..."
 
                 if (catFiltro && subFiltro) {
                     tit.innerText = `${catFiltro} / ${subFiltro}`;
@@ -110,7 +113,14 @@
                 }
             })
             .catch(err => {
-                document.getElementById('contenedor').innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:red;">Error al conectar con Google Sheets. Verifica que el archivo esté compartido públicamente como 'Cualquier persona con el enlace'.</p>`;
+                // ESTO ES LO NUEVO: Si falla, verás el error en la pantalla de tu móvil
+                document.getElementById('contenedor').innerHTML = `
+                    <div style="grid-column: 1/-1; padding: 20px; color: red; border: 2px solid red; border-radius: 12px; background: #fff0f0; margin-top: 20px;">
+                        <h3 style="margin-top:0;">⚠️ Error de Conexión</h3>
+                        <p>No se pudieron cargar los datos del inventario.</p>
+                        <p style="font-weight:bold;">Detalle:</p>
+                        <p style="font-size: 0.9em;">${err.message}</p>
+                    </div>`;
             });
     </script>
 </body>
