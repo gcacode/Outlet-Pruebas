@@ -2,7 +2,8 @@
   {
     "id_producto": "OUT-001",
     "nombre": "Camiseta de Fútbol (Post-Mundial)",
-    "categoria": "Ropa Deportiva",
+    "categoria": "Ropa",
+    "subcategoria": "Deportiva",
     "origen_articulo": "Mercancía Promocional",
     "estado_producto": "Nuevo con etiquetas",
     "precio_referencial": 60.00,
@@ -15,7 +16,8 @@
   {
     "id_producto": "OUT-002",
     "nombre": "Balón de Fútbol Conmemorativo",
-    "categoria": "Equipamiento Deportivo",
+    "categoria": "Deportes",
+    "subcategoria": "Accesorios",
     "origen_articulo": "Mercancía Promocional",
     "estado_producto": "Nuevo en empaque",
     "precio_referencial": 40.00,
@@ -28,7 +30,8 @@
   {
     "id_producto": "OUT-003",
     "nombre": "Kit de Skincare (3 piezas)",
-    "categoria": "Belleza / Cuidado Personal",
+    "categoria": "Belleza",
+    "subcategoria": "Cuidado Facial",
     "origen_articulo": "Obsequio de marca",
     "estado_producto": "Nuevo y sellado",
     "precio_referencial": 45.00,
@@ -41,7 +44,8 @@
   {
     "id_producto": "OUT-004",
     "nombre": "Audífonos Inalámbricos Básicos",
-    "categoria": "Tecnología",
+    "categoria": "Tecnologia",
+    "subcategoria": "Audio",
     "origen_articulo": "Premio de Redes Sociales",
     "estado_producto": "Nuevo - Caja abierta para verificación",
     "precio_referencial": 35.00,
