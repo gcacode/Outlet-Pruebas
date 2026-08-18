@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo - Outlet Familiar</title>
+    <style>
+        /* Estilos básicos para que luzca ordenado y estético */
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
+        .grid-catalogo { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; }
+        .tarjeta-producto { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; }
+        .tarjeta-producto img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; background-color: #eee; }
+        .etiqueta-categoria { font-size: 0.8em; color: #888; text-transform: uppercase; margin-top: 10px; display: block; }
+        .titulo-producto { font-size: 1.1em; color: #333; margin: 10px 0; }
+        .precio-referencial { text-decoration: line-through; color: #a0a0a0; font-size: 0.9em; }
+        .precio-outlet { color: #e63946; font-weight: bold; font-size: 1.3em; margin-bottom: 15px; }
+        .btn-whatsapp { display: block; background: #25D366; color: white; padding: 12px; text-decoration: none; border-radius: 6px; font-weight: bold; transition: background 0.3s; }
+        .btn-whatsapp:hover { background: #1ebe57; }
+    </style>
+</head>
+<body>
+
+    <h2 style="text-align: center; color: #333;">Catálogo Disponible</h2>
+    
+    <!-- Aquí es donde el código insertará los productos automáticamente -->
+    <div id="contenedor-catalogo" class="grid-catalogo"></div>
+
+    <script>
+        // ¡PASO CLAVE AQUI! Cambia las X por el número de WhatsApp de atención
+        const numeroWhatsApp = "593XXXXXXXXX"; 
+
+        // Leer la base de datos JSON
+        fetch('inventario.json')
+            .then(respuesta => respuesta.json())
+            .then(productos => {
+                const contenedor = document.getElementById('contenedor-catalogo');
+                
+                productos.forEach(producto => {
+                    // Solo mostrar si el producto está disponible
+                    if(producto.disponible === true) {
+                        
+                        // Codificamos el mensaje para que sea válido en una URL
+                        const mensajeCodificado = encodeURIComponent(producto.mensaje_compra);
+                        const linkWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${mensajeCodificado}`;
+
+                        // Creamos la estructura HTML de la tarjeta
+                        const tarjetaHTML = `
+                            <div class="tarjeta-producto">
+                                <img src="${producto.imagen_url}" alt="${producto.nombre}" onerror="this.src='https://via.placeholder.com/250?text=Sin+Imagen'">
+                                <span class="etiqueta-categoria">${producto.categoria}</span>
+                                <h3 class="titulo-producto">${producto.nombre}</h3>
+                                <p class="precio-referencial">Normal: $${producto.precio_referencial.toFixed(2)}</p>
+                                <p class="precio-outlet">Outlet: $${producto.precio_outlet.toFixed(2)}</p>
+                                <a href="${linkWhatsApp}" target="_blank" class="btn-whatsapp">Comprar ahora</a>
+                            </div>
+                        `;
+                        
+                        // Insertamos la tarjeta en el contenedor
+                        contenedor.innerHTML += tarjetaHTML;
+                    }
+                });
+            })
+            .catch(error => {
+                console.error("Error al cargar el inventario:", error);
+                document.getElementById('contenedor-catalogo').innerHTML = "<p style='text-align:center;'>Hubo un error cargando los productos.</p>";
+            });
+    </script>
+</body>
+</html>
