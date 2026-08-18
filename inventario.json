@@ -2,57 +2,45 @@
   {
     "id_producto": "OUT-001",
     "nombre": "Camiseta de Fútbol (Post-Mundial)",
-    "categoria": "Ropa",
-    "subcategoria": "Deportiva",
-    "origen_articulo": "Mercancía Promocional",
-    "estado_producto": "Nuevo con etiquetas",
+    "categorias": ["Ropa", "Deportes"],
+    "subcategorias": ["Deportiva", "Oficial"],
     "precio_referencial": 60.00,
     "precio_outlet": 25.00,
-    "stock": 1,
+    "disponible": true,
     "imagen_url": "./assets/img/camiseta-futbol.jpg",
-    "mensaje_compra": "Hola! Me interesa comprar la Camiseta de Fútbol post-mundial (OUT-001). ¿Me ayudas con los datos para la transferencia?",
-    "disponible": true
+    "mensaje_compra": "Hola! Me interesa la Camiseta (OUT-001)."
+  },
+  {
+    "id_producto": "OUT-005",
+    "nombre": "Gorra Autografiada",
+    "categorias": ["Ropa", "Coleccionable"],
+    "subcategorias": ["Accesorios", "Memorabilia"],
+    "precio_referencial": 50.00,
+    "precio_outlet": 30.00,
+    "disponible": true,
+    "imagen_url": "./assets/img/gorra.jpg",
+    "mensaje_compra": "Hola! Me interesa la Gorra (OUT-005)."
   },
   {
     "id_producto": "OUT-002",
     "nombre": "Balón de Fútbol Conmemorativo",
-    "categoria": "Deportes",
-    "subcategoria": "Accesorios",
-    "origen_articulo": "Mercancía Promocional",
-    "estado_producto": "Nuevo en empaque",
+    "categorias": ["Deportes", "Coleccionable"],
+    "subcategorias": ["Accesorios", "Memorabilia"],
     "precio_referencial": 40.00,
     "precio_outlet": 15.00,
-    "stock": 1,
+    "disponible": true,
     "imagen_url": "./assets/img/balon-futbol.jpg",
-    "mensaje_compra": "Hola! Me interesa comprar el Balón de Fútbol (OUT-002). ¿Me ayudas con los datos para la transferencia?",
-    "disponible": true
+    "mensaje_compra": "Hola! Me interesa el Balón (OUT-002)."
   },
   {
     "id_producto": "OUT-003",
     "nombre": "Kit de Skincare (3 piezas)",
-    "categoria": "Belleza",
-    "subcategoria": "Cuidado Facial",
-    "origen_articulo": "Obsequio de marca",
-    "estado_producto": "Nuevo y sellado",
+    "categorias": ["Belleza"],
+    "subcategorias": ["Cuidado Facial"],
     "precio_referencial": 45.00,
     "precio_outlet": 20.00,
-    "stock": 1,
+    "disponible": true,
     "imagen_url": "./assets/img/kit-skincare.jpg",
-    "mensaje_compra": "Hola! Me interesa el Kit de Skincare (OUT-003). ¿A qué cuenta transfiero?",
-    "disponible": true
-  },
-  {
-    "id_producto": "OUT-004",
-    "nombre": "Audífonos Inalámbricos Básicos",
-    "categoria": "Tecnologia",
-    "subcategoria": "Audio",
-    "origen_articulo": "Premio de Redes Sociales",
-    "estado_producto": "Nuevo - Caja abierta para verificación",
-    "precio_referencial": 35.00,
-    "precio_outlet": 15.00,
-    "stock": 1,
-    "imagen_url": "./assets/img/audifonos.jpg",
-    "mensaje_compra": "Hola! Quiero los Audífonos (OUT-004). ¿Podemos coordinar el envío por courier?",
-    "disponible": true
+    "mensaje_compra": "Hola! Me interesa el Kit (OUT-003)."
   }
 ]
