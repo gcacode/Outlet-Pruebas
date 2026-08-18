@@ -1,46 +1,68 @@
 [
   {
-    "id_producto": "OUT-001",
-    "nombre": "Camiseta de Fútbol (Post-Mundial)",
-    "categorias": ["Ropa", "Deportes"],
-    "subcategorias": ["Deportiva", "Oficial"],
-    "precio_referencial": 60.00,
-    "precio_outlet": 25.00,
+    "id_producto": "HOG-001",
+    "nombre": "Estantería Minimalista",
+    "categorias": ["Hogar"],
+    "subcategorias": ["Modulares"],
+    "precio_referencial": 120.00,
+    "precio_outlet": 85.00,
     "disponible": true,
-    "imagen_url": "./assets/img/camiseta-futbol.jpg",
-    "mensaje_compra": "Hola! Me interesa la Camiseta (OUT-001)."
+    "imagen_url": "./assets/img/estanteria.jpg",
+    "mensaje_compra": "Hola! Me interesa la Estantería (HOG-001)."
   },
   {
-    "id_producto": "OUT-005",
+    "id_producto": "VES-001",
     "nombre": "Gorra Autografiada",
-    "categorias": ["Ropa", "Coleccionable"],
-    "subcategorias": ["Accesorios", "Memorabilia"],
+    "categorias": ["Vestimenta"],
+    "subcategorias": ["Coleccionable & Vintage", "Accesorios"],
     "precio_referencial": 50.00,
     "precio_outlet": 30.00,
     "disponible": true,
     "imagen_url": "./assets/img/gorra.jpg",
-    "mensaje_compra": "Hola! Me interesa la Gorra (OUT-005)."
+    "mensaje_compra": "Hola! Me interesa la Gorra (VES-001)."
   },
   {
-    "id_producto": "OUT-002",
-    "nombre": "Balón de Fútbol Conmemorativo",
-    "categorias": ["Deportes", "Coleccionable"],
-    "subcategorias": ["Accesorios", "Memorabilia"],
+    "id_producto": "AUT-001",
+    "nombre": "Aceite Sintético 5W30",
+    "categorias": ["Automotriz"],
+    "subcategorias": ["Mantenimiento & Cuidado"],
     "precio_referencial": 40.00,
-    "precio_outlet": 15.00,
+    "precio_outlet": 25.00,
     "disponible": true,
-    "imagen_url": "./assets/img/balon-futbol.jpg",
-    "mensaje_compra": "Hola! Me interesa el Balón (OUT-002)."
+    "imagen_url": "./assets/img/aceite.jpg",
+    "mensaje_compra": "Hola! Necesito el Aceite (AUT-001)."
   },
   {
-    "id_producto": "OUT-003",
-    "nombre": "Kit de Skincare (3 piezas)",
-    "categorias": ["Belleza"],
-    "subcategorias": ["Cuidado Facial"],
+    "id_producto": "JUE-001",
+    "nombre": "Monopoly Edición Especial",
+    "categorias": ["Juegos & Entretenimiento"],
+    "subcategorias": ["Juegos"],
     "precio_referencial": 45.00,
     "precio_outlet": 20.00,
     "disponible": true,
-    "imagen_url": "./assets/img/kit-skincare.jpg",
-    "mensaje_compra": "Hola! Me interesa el Kit (OUT-003)."
+    "imagen_url": "./assets/img/monopoly.jpg",
+    "mensaje_compra": "Hola! Quiero el Monopoly (JUE-001)."
+  },
+  {
+    "id_producto": "HIG-001",
+    "nombre": "Set de Maquillaje Pro",
+    "categorias": ["Higiene & Cuidado Personal"],
+    "subcategorias": ["Make-up"],
+    "precio_referencial": 60.00,
+    "precio_outlet": 35.00,
+    "disponible": true,
+    "imagen_url": "./assets/img/makeup.jpg",
+    "mensaje_compra": "Hola! Me interesa el Set de Maquillaje (HIG-001)."
+  },
+  {
+    "id_producto": "AUD-001",
+    "nombre": "Home Theater 5.1",
+    "categorias": ["Audio & Video"],
+    "subcategorias": ["Sistemas Fijos"],
+    "precio_referencial": 200.00,
+    "precio_outlet": 150.00,
+    "disponible": true,
+    "imagen_url": "./assets/img/hometheater.jpg",
+    "mensaje_compra": "Hola! Me interesa el Home Theater (AUD-001)."
   }
 ]
