@@ -7,6 +7,13 @@
     <style>
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
         .grid-catalogo { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; }
+        
+        /* Tarjetas genéricas para Categorías y Subcategorías */
+        .tarjeta-navegacion { background: white; padding: 30px 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; text-decoration: none; color: #333; display: block; transition: transform 0.2s, box-shadow 0.2s; }
+        .tarjeta-navegacion:hover { transform: translateY(-5px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .tarjeta-navegacion h3 { margin: 0; font-size: 1.4em; color: #0066cc; text-transform: capitalize; }
+        
+        /* Tarjetas de Productos (Nivel 3) */
         .tarjeta-producto { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; }
         .tarjeta-producto img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; background-color: #eee; }
         .etiqueta-categoria { font-size: 0.8em; color: #888; text-transform: uppercase; margin-top: 10px; display: block; }
@@ -15,92 +22,126 @@
         .precio-outlet { color: #e63946; font-weight: bold; font-size: 1.3em; margin-bottom: 15px; }
         .btn-whatsapp { display: block; background: #25D366; color: white; padding: 12px; text-decoration: none; border-radius: 6px; font-weight: bold; transition: background 0.3s; }
         .btn-whatsapp:hover { background: #1ebe57; }
-        #titulo-seccion { text-align: center; color: #333; margin-bottom: 10px; text-transform: capitalize; }
-        #subtitulo-seccion { text-align: center; color: #666; margin-bottom: 30px; font-size: 1.1em; display: none;}
-        .btn-ver-todo { display: inline-block; margin-bottom: 20px; color: #0066cc; text-decoration: none; font-weight: bold; }
+
+        #titulo-principal { text-align: center; color: #333; margin-bottom: 30px; text-transform: capitalize; }
+        .btn-volver { display: inline-block; margin-bottom: 20px; color: #0066cc; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div style="max-width: 1000px; margin: 0 auto;">
-        <a href="index.html" class="btn-ver-todo" id="btn-volver" style="display: none;">← Ver todo el catálogo</a>
+        <a href="index.html" class="btn-volver" id="link-volver" style="display: none;">← Volver</a>
     </div>
 
-    <h2 id="titulo-seccion">Catálogo Completo</h2>
-    <h3 id="subtitulo-seccion"></h3>
+    <h2 id="titulo-principal">Nuestras Categorías</h2>
     
-    <div id="contenedor-catalogo" class="grid-catalogo"></div>
+    <div id="contenedor-dinamico" class="grid-catalogo"></div>
 
     <script>
-        // ¡IMPORTANTE! Cambia las X por tu número de WhatsApp
+        // 1. TU NÚMERO DE WHATSAPP
         const numeroWhatsApp = "593XXXXXXXXX"; 
 
-        // LEER LOS PARÁMETROS DE LA URL
+        // 2. LEER PARÁMETROS DE LA URL
         const urlParams = new URLSearchParams(window.location.search);
         const categoriaFiltro = urlParams.get('categoria');
         const subcategoriaFiltro = urlParams.get('subcategoria');
 
-        // ACTUALIZAR LOS TÍTULOS VISUALMENTE
-        if (categoriaFiltro) {
-            document.getElementById('titulo-seccion').innerText = "Categoría: " + categoriaFiltro;
-            document.getElementById('btn-volver').style.display = "inline-block";
-            
-            if (subcategoriaFiltro) {
-                 const subtitulo = document.getElementById('subtitulo-seccion');
-                 subtitulo.innerText = "Subcategoría: " + subcategoriaFiltro;
-                 subtitulo.style.display = "block";
-            }
-        }
-
-        // CARGAR Y FILTRAR EL INVENTARIO
+        // 3. CARGAR INVENTARIO Y GESTIONAR LOS 3 NIVELES
         fetch('inventario.json')
             .then(respuesta => respuesta.json())
             .then(productos => {
-                const contenedor = document.getElementById('contenedor-catalogo');
-                let productosMostrados = 0;
-                
-                productos.forEach(producto => {
-                    let mostrarProducto = false;
+                const contenedor = document.getElementById('contenedor-dinamico');
+                const titulo = document.getElementById('titulo-principal');
+                const btnVolver = document.getElementById('link-volver');
 
-                    if (!categoriaFiltro && !subcategoriaFiltro) {
-                        mostrarProducto = true;
-                    } else {
-                        const coincideCat = categoriaFiltro ? producto.categoria.toLowerCase().includes(categoriaFiltro.toLowerCase()) : true;
-                        const coincideSubCat = subcategoriaFiltro ? (producto.subcategoria && producto.subcategoria.toLowerCase().includes(subcategoriaFiltro.toLowerCase())) : true;
+                // --- NIVEL 3: MOSTRAR PRODUCTOS (SKUs) ---
+                if (categoriaFiltro && subcategoriaFiltro) {
+                    titulo.innerText = `${categoriaFiltro} / ${subcategoriaFiltro}`;
+                    btnVolver.style.display = "inline-block";
+                    btnVolver.href = `?categoria=${encodeURIComponent(categoriaFiltro)}`;
 
-                        if (coincideCat && coincideSubCat) {
-                            mostrarProducto = true;
+                    let encontrados = 0;
+                    productos.forEach(producto => {
+                        const matchCat = producto.categoria.toLowerCase() === categoriaFiltro.toLowerCase();
+                        const matchSubCat = producto.subcategoria && producto.subcategoria.toLowerCase() === subcategoriaFiltro.toLowerCase();
+
+                        if (producto.disponible === true && matchCat && matchSubCat) {
+                            encontrados++;
+                            const mensajeCodificado = encodeURIComponent(producto.mensaje_compra);
+                            const linkWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${mensajeCodificado}`;
+
+                            contenedor.innerHTML += `
+                                <div class="tarjeta-producto">
+                                    <img src="${producto.imagen_url}" alt="${producto.nombre}" onerror="this.src='https://via.placeholder.com/250?text=Sin+Imagen'">
+                                    <span class="etiqueta-categoria">SKU: ${producto.id_producto}</span>
+                                    <h3 class="titulo-producto">${producto.nombre}</h3>
+                                    <p class="precio-referencial">Normal: $${producto.precio_referencial.toFixed(2)}</p>
+                                    <p class="precio-outlet">Outlet: $${producto.precio_outlet.toFixed(2)}</p>
+                                    <a href="${linkWhatsApp}" target="_blank" class="btn-whatsapp">Comprar ahora</a>
+                                </div>
+                            `;
                         }
+                    });
+
+                    if (encontrados === 0) {
+                        contenedor.innerHTML = "<p style='text-align:center; grid-column: 1 / -1;'>No hay productos disponibles en esta subcategoría.</p>";
                     }
+                }
+                
+                // --- NIVEL 2: MOSTRAR SUBCATEGORÍAS ---
+                else if (categoriaFiltro) {
+                    titulo.innerText = `Categoría: ${categoriaFiltro}`;
+                    btnVolver.style.display = "inline-block";
+                    btnVolver.href = "index.html";
 
-                    if(producto.disponible === true && mostrarProducto) {
-                        productosMostrados++;
-                        const mensajeCodificado = encodeURIComponent(producto.mensaje_compra);
-                        const linkWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${mensajeCodificado}`;
+                    // Extraer subcategorías únicas de esta categoría
+                    const subcategoriasSet = new Set();
+                    productos.forEach(p => {
+                        if (p.categoria.toLowerCase() === categoriaFiltro.toLowerCase() && p.subcategoria) {
+                            subcategoriasSet.add(p.subcategoria);
+                        }
+                    });
 
-                        const textoEtiqueta = producto.subcategoria ? `${producto.categoria} / ${producto.subcategoria}` : producto.categoria;
+                    if (subcategoriasSet.size === 0) {
+                        contenedor.innerHTML = "<p style='text-align:center; grid-column: 1 / -1;'>No hay subcategorías registradas.</p>";
+                    } else {
+                        subcategoriasSet.forEach(subcat => {
+                            contenedor.innerHTML += `
+                                <a href="?categoria=${encodeURIComponent(categoriaFiltro)}&subcategoria=${encodeURIComponent(subcat)}" class="tarjeta-navegacion">
+                                    <h3>${subcat}</h3>
+                                    <p style="color: #666; margin-top: 10px; font-size: 0.9em;">Ver productos →</p>
+                                </a>
+                            `;
+                        });
+                    }
+                }
+                
+                // --- NIVEL 1: MOSTRAR CATEGORÍAS PRINCIPALES ---
+                else {
+                    titulo.innerText = "Nuestras Categorías";
+                    btnVolver.style.display = "none";
 
-                        const tarjetaHTML = `
-                            <div class="tarjeta-producto">
-                                <img src="${producto.imagen_url}" alt="${producto.nombre}" onerror="this.src='https://via.placeholder.com/250?text=Sin+Imagen'">
-                                <span class="etiqueta-categoria">${textoEtiqueta}</span>
-                                <h3 class="titulo-producto">${producto.nombre}</h3>
-                                <p class="precio-referencial">Normal: $${producto.precio_referencial.toFixed(2)}</p>
-                                <p class="precio-outlet">Outlet: $${producto.precio_outlet.toFixed(2)}</p>
-                                <a href="${linkWhatsApp}" target="_blank" class="btn-whatsapp">Comprar ahora</a>
-                            </div>
+                    // Extraer categorías únicas del JSON
+                    const categoriasSet = new Set();
+                    productos.forEach(p => {
+                        if (p.categoria) {
+                            categoriasSet.add(p.categoria);
+                        }
+                    });
+
+                    categoriasSet.forEach(cat => {
+                        contenedor.innerHTML += `
+                            <a href="?categoria=${encodeURIComponent(cat)}" class="tarjeta-navegacion">
+                                <h3>${cat}</h3>
+                                <p style="color: #666; margin-top: 10px; font-size: 0.9em;">Explorar subcategorías →</p>
+                            </a>
                         `;
-                        contenedor.innerHTML += tarjetaHTML;
-                    }
-                });
-
-                if (productosMostrados === 0) {
-                    contenedor.innerHTML = "<p style='text-align:center; grid-column: 1 / -1;'>No hay productos disponibles en esta sección por el momento.</p>";
+                    });
                 }
             })
             .catch(error => {
-                console.error("Error al cargar el inventario:", error);
-                document.getElementById('contenedor-catalogo').innerHTML = "<p style='text-align:center;'>Hubo un error cargando los productos.</p>";
+                console.error("Error al cargar el catálogo:", error);
+                document.getElementById('contenedor-dinamico').innerHTML = "<p style='text-align:center;'>Error al cargar el contenido.</p>";
             });
     </script>
 </body>
