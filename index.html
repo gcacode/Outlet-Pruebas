@@ -31,7 +31,6 @@
 
     <script>
         const WA_NUMERO = "593XXXXXXXXX"; 
-        // Usamos la URL de exportación directa que es más estable
         const CSV_URL = "https://docs.google.com/spreadsheets/d/168Qg4rnF4Kjj0Y8RKzQYov4ek3t0vrtarHTcc9qVxo/export?format=csv&gid=0";
 
         const METADATA_ESTRUCTURA = {
@@ -71,7 +70,7 @@
 
         fetch(CSV_URL)
             .then(res => {
-                if (!res.ok) throw new Error('Servidor respondió: ' + res.status);
+                if (!res.ok) throw new Error('Servidor respondió con código: ' + res.status);
                 return res.text();
             })
             .then(csvText => {
@@ -80,7 +79,7 @@
                 const tit = document.getElementById('titulo');
                 const btn = document.getElementById('btn-back');
 
-                cont.innerHTML = ''; // Limpiar el "Cargando..."
+                cont.innerHTML = '';
 
                 if (catFiltro && subFiltro) {
                     tit.innerText = `${catFiltro} / ${subFiltro}`;
@@ -113,13 +112,12 @@
                 }
             })
             .catch(err => {
-                // ESTO ES LO NUEVO: Si falla, verás el error en la pantalla de tu móvil
                 document.getElementById('contenedor').innerHTML = `
                     <div style="grid-column: 1/-1; padding: 20px; color: red; border: 2px solid red; border-radius: 12px; background: #fff0f0; margin-top: 20px;">
-                        <h3 style="margin-top:0;">⚠️ Error de Conexión</h3>
-                        <p>No se pudieron cargar los datos del inventario.</p>
-                        <p style="font-weight:bold;">Detalle:</p>
-                        <p style="font-size: 0.9em;">${err.message}</p>
+                        <h3 style="margin-top:0;">⚠️ Error de Acceso</h3>
+                        <p>No se pudo leer el archivo de Google Sheets.</p>
+                        <p style="font-weight:bold;">Causa probable:</p>
+                        <p style="font-size: 0.9em;">El archivo en Google Drive no está configurado como "Cualquier persona con el enlace" (Lector).</p>
                     </div>`;
             });
     </script>
