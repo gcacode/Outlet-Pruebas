@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo - Outlet Familiar</title>
     <style>
-        /* Estilos básicos para que luzca ordenado y estético */
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
         .grid-catalogo { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; }
         .tarjeta-producto { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; }
@@ -16,34 +15,54 @@
         .precio-outlet { color: #e63946; font-weight: bold; font-size: 1.3em; margin-bottom: 15px; }
         .btn-whatsapp { display: block; background: #25D366; color: white; padding: 12px; text-decoration: none; border-radius: 6px; font-weight: bold; transition: background 0.3s; }
         .btn-whatsapp:hover { background: #1ebe57; }
+        #titulo-seccion { text-align: center; color: #333; margin-bottom: 30px; text-transform: capitalize; }
+        .btn-ver-todo { display: inline-block; margin-bottom: 20px; color: #0066cc; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: center; color: #333;">Catálogo Disponible</h2>
+    <div style="max-width: 1000px; margin: 0 auto;">
+        <a href="index.html" class="btn-ver-todo" id="btn-volver" style="display: none;">← Ver todo el catálogo</a>
+    </div>
+
+    <h2 id="titulo-seccion">Catálogo Completo</h2>
     
-    <!-- Aquí es donde el código insertará los productos automáticamente -->
     <div id="contenedor-catalogo" class="grid-catalogo"></div>
 
     <script>
-        // ¡PASO CLAVE AQUI! Cambia las X por el número de WhatsApp de atención
-        const numeroWhatsApp = "593964530521"; 
+        // 1. TU NÚMERO DE WHATSAPP
+        const numeroWhatsApp = "593XXXXXXXXX"; 
 
-        // Leer la base de datos JSON
+        // 2. LEER EL PARÁMETRO DE LA URL (Ej: ?categoria=ropa)
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoriaFiltro = urlParams.get('categoria');
+
+        // 3. ACTUALIZAR EL TÍTULO SI HAY FILTRO
+        if (categoriaFiltro) {
+            document.getElementById('titulo-seccion').innerText = "Categoría: " + categoriaFiltro;
+            document.getElementById('btn-volver').style.display = "inline-block";
+        }
+
+        // 4. CARGAR Y FILTRAR EL INVENTARIO
         fetch('inventario.json')
             .then(respuesta => respuesta.json())
             .then(productos => {
                 const contenedor = document.getElementById('contenedor-catalogo');
+                let productosMostrados = 0;
                 
                 productos.forEach(producto => {
-                    // Solo mostrar si el producto está disponible
-                    if(producto.disponible === true) {
-                        
-                        // Codificamos el mensaje para que sea válido en una URL
+                    // Verificamos si el producto coincide con la categoría buscada (ignorando mayúsculas)
+                    let coincideCategoria = true;
+                    if (categoriaFiltro) {
+                        coincideCategoria = producto.categoria.toLowerCase().includes(categoriaFiltro.toLowerCase());
+                    }
+
+                    // Solo mostramos si está disponible Y coincide con la categoría
+                    if(producto.disponible === true && coincideCategoria) {
+                        productosMostrados++;
                         const mensajeCodificado = encodeURIComponent(producto.mensaje_compra);
                         const linkWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${mensajeCodificado}`;
 
-                        // Creamos la estructura HTML de la tarjeta
                         const tarjetaHTML = `
                             <div class="tarjeta-producto">
                                 <img src="${producto.imagen_url}" alt="${producto.nombre}" onerror="this.src='https://via.placeholder.com/250?text=Sin+Imagen'">
@@ -54,11 +73,14 @@
                                 <a href="${linkWhatsApp}" target="_blank" class="btn-whatsapp">Comprar ahora</a>
                             </div>
                         `;
-                        
-                        // Insertamos la tarjeta en el contenedor
                         contenedor.innerHTML += tarjetaHTML;
                     }
                 });
+
+                // Mensaje si la categoría está vacía
+                if (productosMostrados === 0) {
+                    contenedor.innerHTML = "<p style='text-align:center; grid-column: 1 / -1;'>No hay productos disponibles en esta categoría por el momento.</p>";
+                }
             })
             .catch(error => {
                 console.error("Error al cargar el inventario:", error);
