@@ -3,73 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catálogo Premium - Outlet</title>
+    <title>Catálogo Oficial - Outlet</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f9f9f9; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; text-decoration: none; color: #333; transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 12px rgba(0,0,0,0.15); }
-        .btn-main { background: #0066cc; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block; margin-bottom: 20px; }
-        .btn-wa { background: #25D366; color: white; padding: 10px; border-radius: 6px; text-decoration: none; display: block; margin-top: 10px; font-weight: bold; }
-        img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; padding: 20px; color: #333; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.08); text-align: center; text-decoration: none; color: #333; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; justify-content: space-between; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.12); }
+        .card img { width: 100%; height: 160px; object-fit: cover; background: #eee; }
+        .card-body { padding: 15px; }
+        .card h3 { margin: 10px 0 5px; font-size: 1.1rem; }
+        .card p { margin: 5px 0; color: #666; font-size: 0.95rem; }
+        .precio-ref { text-decoration: line-through; color: #999; font-size: 0.85rem; }
+        .precio-out { color: #d9534f; font-weight: bold; font-size: 1.1rem; }
+        .btn-main { background: #0056b3; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; margin-bottom: 20px; }
+        .btn-wa { background: #25D366; color: white; padding: 10px; border-radius: 6px; text-decoration: none; display: block; margin-top: 10px; font-weight: bold; font-size: 0.9rem; }
+        h1 { text-align: center; margin-bottom: 30px; color: #222; }
     </style>
 </head>
 <body>
 
-    <div style="max-width: 1100px; margin: 0 auto;">
+    <div class="container">
         <a href="index.html" id="btn-back" class="btn-main" style="display:none;">← Volver</a>
+        <h1 id="titulo">Nuestras Categorías</h1>
+        <div id="contenedor" class="grid"></div>
     </div>
 
-    <h1 id="titulo" style="text-align:center;">Nuestras Categorías</h1>
-    <div id="contenedor" class="grid"></div>
-
     <script>
-        const WA_NUMERO = "593XXXXXXXXX"; // <--- CAMBIA TU NÚMERO AQUÍ
+        // CONFIGURACIÓN DE WHATSAPP Y GOOGLE SHEETS
+        const WA_NUMERO = "593XXXXXXXXX"; // Reemplaza con tu número
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQoLI5bsvt9IvZi4YUS2U3ClpF3KAxjAxcLwdVqszJdPuDl8NP6XMmFyZmuRUpE_xvq5GSRBm1RQfOq/pub?gid=0&single=true&output=csv"; // Reemplaza con tu enlace CSV
+
+        // 1. DICCIONARIO DE IDENTIDAD VISUAL FIJA (Imágenes oficiales de categorías y subcategorías)
+        const METADATA_ESTRUCTURA = {
+            "Hogar": {
+                imagen: "./assets/img/cat-hogar.jpg",
+                subcategorias: {
+                    "Modulares": { imagen: "./assets/img/sub-modulares.jpg" },
+                    "Decoración": { imagen: "./assets/img/sub-decoracion.jpg" }
+                }
+            },
+            "Vestimenta": {
+                imagen: "./assets/img/cat-vestimenta.jpg",
+                subcategorias: {
+                    "Para Ellas": { imagen: "./assets/img/sub-ellas.jpg" },
+                    "Para Ellos": { imagen: "./assets/img/sub-ellos.jpg" },
+                    "Para los Peques": { imagen: "./assets/img/sub-peques.jpg" },
+                    "Para mis Mascotas": { imagen: "./assets/img/sub-mascotas.jpg" },
+                    "Deportiva": { imagen: "./assets/img/sub-deportiva.jpg" },
+                    "Coleccionable & Vintage": { imagen: "./assets/img/sub-coleccionable.jpg" },
+                    "Calzado": { imagen: "./assets/img/sub-calzado.jpg" },
+                    "Accesorios": { imagen: "./assets/img/sub-accesorios.jpg" }
+                }
+            },
+            "Audio & Video": {
+                imagen: "./assets/img/cat-audiovideo.jpg",
+                subcategorias: {
+                    "Portátiles": { imagen: "./assets/img/sub-portatiles.jpg" },
+                    "Sistemas Fijos": { imagen: "./assets/img/sub-sistemasfijos.jpg" }
+                }
+            },
+            "Automotriz": {
+                imagen: "./assets/img/cat-automotriz.jpg",
+                subcategorias: {
+                    "Mantenimiento & Cuidado": { imagen: "./assets/img/sub-mantenimiento.jpg" },
+                    "Equipamiento & Emergencia": { imagen: "./assets/img/sub-equipamiento.jpg" },
+                    "Protección & Confort": { imagen: "./assets/img/sub-proteccion.jpg" }
+                }
+            },
+            "Juegos & Entretenimiento": {
+                imagen: "./assets/img/cat-juegos.jpg",
+                subcategorias: {
+                    "Eventos": { imagen: "./assets/img/sub-eventos.jpg" },
+                    "Bebidas Alcohólicas": { imagen: "./assets/img/sub-bebidas.jpg" },
+                    "Juegos": { imagen: "./assets/img/sub-juegosmesa.jpg" }
+                }
+            },
+            "Higiene & Cuidado Personal": {
+                imagen: "./assets/img/cat-higiene.jpg",
+                subcategorias: {
+                    "Make-up": { imagen: "./assets/img/sub-makeup.jpg" },
+                    "Personal Care": { imagen: "./assets/img/sub-personalcare.jpg" },
+                    "Wellness (Nutrición)": { imagen: "./assets/img/sub-wellness.jpg" }
+                }
+            }
+        };
+
+        // 2. PARSER CSV LIGERO PARA LEER GOOGLE SHEETS
+        function parseCSV(text) {
+            const lines = text.split('\n');
+            const result = [];
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const currentline = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || lines[i].split(',');
+                const obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    let val = currentline[j] ? currentline[j].trim().replace(/^"|"$/g, '') : '';
+                    obj[headers[j]] = val;
+                }
+                
+                // Procesar arreglos para categorías y subcategorías (separadas por comas en el sheet)
+                obj.categorias = obj.categorias ? obj.categorias.split(',').map(c => c.trim()) : [];
+                obj.subcategorias = obj.subcategorias ? obj.subcategorias.split(',').map(s => s.trim()) : [];
+                obj.stock = Number(obj.stock) || 0;
+                obj.precio_referencial = Number(obj.precio_referencial) || 0;
+                obj.precio_outlet = Number(obj.precio_outlet) || 0;
+                
+                result.push(obj);
+            }
+            return result;
+        }
+
+        // 3. LOGICA DE NAVEGACIÓN Y RENDERIZADO
         const params = new URLSearchParams(window.location.search);
         const catFiltro = params.get('cat');
         const subFiltro = params.get('sub');
 
-        fetch('inventario.json').then(r => r.json()).then(data => {
-            const cont = document.getElementById('contenedor');
-            const tit = document.getElementById('titulo');
-            const btn = document.getElementById('btn-back');
-
-            // Nivel 3: Productos (SKU)
-            if (catFiltro && subFiltro) {
-                tit.innerText = `${catFiltro} / ${subFiltro}`;
-                btn.style.display = "inline-block";
-                btn.href = `?cat=${encodeURIComponent(catFiltro)}`;
+        fetch(CSV_URL)
+            .then(res => res.text())
+            .then(csvText => {
+                const productosBrutos = parseCSV(csvText);
                 
-                data.filter(p => p.categorias.includes(catFiltro) && p.subcategorias.includes(subFiltro))
-                    .forEach(p => {
-                        cont.innerHTML += `<div class="card">
-                            <img src="${p.imagen_url}" onerror="this.src='https://via.placeholder.com/200'">
-                            <h3>${p.nombre}</h3>
-                            <p>Outlet: $${p.precio_outlet.toFixed(2)}</p>
-                            <a href="https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(p.mensaje_compra)}" class="btn-wa">Comprar</a>
-                        </div>`;
-                });
-            }
-            // Nivel 2: Subcategorías
-            else if (catFiltro) {
-                tit.innerText = catFiltro;
-                btn.style.display = "inline-block";
-                btn.href = "index.html";
-                const subs = new Set();
-                data.filter(p => p.categorias.includes(catFiltro)).forEach(p => p.subcategorias.forEach(s => subs.add(s)));
-                subs.forEach(s => {
-                    cont.innerHTML += `<a href="?cat=${encodeURIComponent(catFiltro)}&sub=${encodeURIComponent(s)}" class="card"><h3>${s}</h3><p>Ver productos →</p></a>`;
-                });
-            }
-            // Nivel 1: Categorías
-            else {
-                const cats = new Set();
-                data.forEach(p => p.categorias.forEach(c => cats.add(c)));
-                cats.forEach(c => {
-                    cont.innerHTML += `<a href="?cat=${encodeURIComponent(c)}" class="card"><h3>${c}</h3><p>Ver subcategorías →</p></a>`;
-                });
-            }
-        });
+                // REGLA CLAVE: Filtrar solo productos con stock diferente de 0
+                const productosActivos = productosBrutos.filter(p => p.stock > 0);
+
+                const cont = document.getElementById('contenedor');
+                const tit = document.getElementById('titulo');
+                const btn = document.getElementById('btn-back');
+
+                // NIVEL 3: Productos (SKU)
+                if (catFiltro && subFiltro) {
+                    tit.innerText = `${catFiltro} / ${subFiltro}`;
+                    btn.style.display = "inline-block";
+                    btn.href = `?cat=${encodeURIComponent(catFiltro)}`;
+                    
+                    const filtrados = productosActivos.filter(p => 
+                        p.categorias.includes(catFiltro) && p.subcategorias.includes(subFiltro)
+                    );
+
+                    if (filtrados.length === 0) {
+                        cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay productos disponibles en esta sección actualmente.</p>';
+                        return;
+                    }
+
+                    filtrados.forEach(p => {
+                        cont.innerHTML += `
+                            <div class="card">
+                                <img src="${p.imagen_url}" onerror="this.src='https://via.placeholder.com/240x160?text=Sin+Imagen'">
+                                <div class="card-body">
+                                    <h3>${p.nombre}</h3>
+                                    <p class="precio-ref">Ref: $${p.precio_referencial.toFixed(2)}</p>
+                                    <p class="precio-out">Outlet: $${p.precio_outlet.toFixed(2)}</p>
+                                    <a href="https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(p.mensaje_compra)}" class="btn-wa">Comprar por WhatsApp</a>
+                                </div>
+                            </div>`;
+                    });
+                }
+                // NIVEL 2: Subcategorías (Validando stock activo y usando imagen fija)
+                else if (catFiltro) {
+                    tit.innerText = catFiltro;
+                    btn.style.display = "inline-block";
+                    btn.href = "index.html";
+
+                    // Obtener subcategorías que tengan al menos 1 producto con stock > 0
+                    const subsDisponibles = new Set();
+                    productosActivos
+                        .filter(p => p.categorias.includes(catFiltro))
+                        .forEach(p => p.subcategorias.forEach(s => subsDisponibles.add(s)));
+
+                    if (subsDisponibles.size === 0) {
+                        cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay subcategorías con stock disponible.</p>`;
+                        return;
+                    }
+
+                    subsDisponibles.forEach(s => {
+                        // Buscar imagen fija en el diccionario, si no existe usar un placeholder
+                        const imgFija = METADATA_ESTRUCTURA[catFiltro]?.subcategorias[s]?.imagen || 'https://via.placeholder.com/240x160?text=' + encodeURIComponent(s);
+                        
+                        cont.innerHTML += `
+                            <a href="?cat=${encodeURIComponent(catFiltro)}&sub=${encodeURIComponent(s)}" class="card">
+                                <img src="${imgFija}" onerror="this.src='https://via.placeholder.com/240x160?text=Subcategoría'">
+                                <div class="card-body">
+                                    <h3>${s}</h3>
+                                    <p style="color:#0056b3; font-weight:bold;">Ver productos →</p>
+                                </div>
+                            </a>`;
+                    });
+                }
+                // NIVEL 1: Categorías principales (Validando stock activo y usando imagen fija)
+                else {
+                    const catsDisponibles = new Set();
+                    productosActivos.forEach(p => p.categorias.forEach(c => catsDisponibles.add(c)));
+
+                    catsDisponibles.forEach(c => {
+                        const imgFija = METADATA_ESTRUCTURA[c]?.imagen || 'https://via.placeholder.com/240x160?text=' + encodeURIComponent(c);
+
+                        cont.innerHTML += `
+                            <a href="?cat=${encodeURIComponent(c)}" class="card">
+                                <img src="${imgFija}" onerror="this.src='https://via.placeholder.com/240x160?text=Categoría'">
+                                <div class="card-body">
+                                    <h3>${c}</h3>
+                                    <p style="color:#0056b3; font-weight:bold;">Ver subcategorías →</p>
+                                </div>
+                            </a>`;
+                    });
+                }
+            })
+            .catch(err => {
+                console.error("Error al cargar el inventario desde Google Sheets:", err);
+                document.getElementById('contenedor').innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:red;">Error al conectar con la base de datos de inventario.</p>`;
+            });
     </script>
 </body>
 </html>
