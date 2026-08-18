@@ -31,7 +31,8 @@
 
     <script>
         const WA_NUMERO = "593XXXXXXXXX"; 
-        const CSV_URL = "https://docs.google.com/spreadsheets/d/168Qg4rnF4Kjj0Y8RKzQYov4ek3t0vrtarHTcc9qVxo/export?format=csv&gid=0";
+        // Usamos el endpoint oficial de Google Visualization para evitar errores 404
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/168Qg4rnF4Kjj0Y8RKzQYov4ek3t0vrtarHTcc9qVxo/gviz/tq?tqx=out:csv&gid=0";
 
         const METADATA_ESTRUCTURA = {
             "Hogar": { imagen: "./assets/img/cat-hogar.jpg", subcategorias: { "Modulares": { imagen: "./assets/img/sub-modulares.jpg" }, "Decoración": { imagen: "./assets/img/sub-decoracion.jpg" } } },
@@ -114,10 +115,10 @@
             .catch(err => {
                 document.getElementById('contenedor').innerHTML = `
                     <div style="grid-column: 1/-1; padding: 20px; color: red; border: 2px solid red; border-radius: 12px; background: #fff0f0; margin-top: 20px;">
-                        <h3 style="margin-top:0;">⚠️ Error de Acceso</h3>
-                        <p>No se pudo leer el archivo de Google Sheets.</p>
-                        <p style="font-weight:bold;">Causa probable:</p>
-                        <p style="font-size: 0.9em;">El archivo en Google Drive no está configurado como "Cualquier persona con el enlace" (Lector).</p>
+                        <h3 style="margin-top:0;">⚠️ Error de Conexión</h3>
+                        <p>No se pudieron cargar los datos del inventario.</p>
+                        <p style="font-weight:bold;">Detalle:</p>
+                        <p style="font-size: 0.9em;">${err.message}</p>
                     </div>`;
             });
     </script>
