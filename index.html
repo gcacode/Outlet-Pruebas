@@ -25,7 +25,7 @@
         .container { max-width: 1100px; margin: 0 auto; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         
-        /* Tarjetas con efecto translúcido (Glassmorphism ligero) */
+        /* Tarjetas con efecto translúcido */
         .card { 
             background: rgba(255, 255, 255, 0.95); 
             border-radius: 12px; 
@@ -51,8 +51,14 @@
         .precio-ref { text-decoration: line-through; color: #888; font-size: 0.85rem; margin-right: 5px; }
         .precio-out { color: #d9534f; font-weight: bold; font-size: 1.2rem; }
         
+        /* Contenedor de Botones Superiores */
+        .top-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        
         /* Botones de acción */
-        .btn-main { background: #0056b3; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; margin-bottom: 20px; }
+        .btn-main { background: #0056b3; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; }
+        .btn-home-canva { background: #8b3dff; } /* Morado Canva */
+        .btn-catalog { background: #4a5568; } /* Gris oscuro */
+        
         .btn-wa { background: #25D366; color: white; padding: 10px; border-radius: 6px; text-decoration: none; display: block; margin-top: 10px; font-weight: bold; font-size: 0.9rem; }
         
         .extra-links { display: flex; gap: 6px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
@@ -66,7 +72,16 @@
 <body>
 
     <div class="container">
-        <a href="index.html" id="btn-back" class="btn-main" style="display:none;">← Volver</a>
+        <!-- Panel de Navegación Superior -->
+        <div class="top-nav">
+            <!-- REEMPLAZA ESTE ENLACE CON TU URL DE CANVA -->
+            <a href="https://hannalabanana.my.canva.site/dahqnptxdda" target="_blank" class="btn-main btn-home-canva">🏠 Home</a>
+            
+            <!-- Botones dinámicos (ocultos por defecto) -->
+            <a href="index.html" id="btn-home-catalog" class="btn-main btn-catalog" style="display:none;">📦 Catálogo Principal</a>
+            <a href="#" id="btn-back" class="btn-main" style="display:none;">← Volver</a>
+        </div>
+
         <h1 id="titulo">Nuestras Categorías</h1>
         <div id="contenedor" class="grid">Cargando catálogo...</div>
     </div>
@@ -135,15 +150,22 @@
                 const productosActivos = parseCSV(csvText).filter(p => p.stock > 0);
                 const cont = document.getElementById('contenedor');
                 const tit = document.getElementById('titulo');
-                const btn = document.getElementById('btn-back');
+                
+                // Referencias a los botones nuevos
+                const btnBack = document.getElementById('btn-back');
+                const btnHomeCatalog = document.getElementById('btn-home-catalog');
 
                 cont.innerHTML = '';
 
                 // NIVEL 3: VISTA DE PRODUCTOS
                 if (catFiltro && subFiltro) {
                     tit.innerText = `${catFiltro} / ${subFiltro}`;
-                    btn.style.display = "inline-block";
-                    btn.href = `?cat=${encodeURIComponent(catFiltro)}`;
+                    
+                    // Mostrar botones
+                    btnHomeCatalog.style.display = "inline-block";
+                    btnBack.style.display = "inline-block";
+                    btnBack.href = `?cat=${encodeURIComponent(catFiltro)}`; // Vuelve a subcategorías
+                    btnBack.innerText = "← Volver a " + catFiltro;
                     
                     const productosFiltrados = productosActivos.filter(p => perteneceARuta(p, catFiltro, subFiltro));
 
@@ -151,7 +173,6 @@
                         cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay productos disponibles en esta sección actualmente.</p>`;
                     } else {
                         productosFiltrados.forEach(p => {
-                            // Renderizado condicional de características y links
                             const htmlSpecs = p.caracteristicas ? `<p class="caracteristicas-text">${p.caracteristicas}</p>` : '';
                             const btnOficial = p.url_oficial ? `<a href="${p.url_oficial}" target="_blank" class="btn-ext btn-brand">🌐 Ref/Especificaciones</a>` : '';
                             const btnCanva = p.url_canva ? `<a href="${p.url_canva}" target="_blank" class="btn-ext btn-canva">🎬 Conoce más!</a>` : '';
@@ -183,8 +204,10 @@
                 // NIVEL 2: VISTA DE SUBCATEGORÍAS
                 } else if (catFiltro) {
                     tit.innerText = catFiltro;
-                    btn.style.display = "inline-block";
-                    btn.href = "index.html";
+                    
+                    // Mostrar el botón de catálogo principal (ya que aquí funciona como volver)
+                    btnHomeCatalog.style.display = "inline-block";
+                    btnBack.style.display = "none"; // Se oculta porque hace lo mismo que Catálogo Principal en este nivel
                     
                     const subsDisponibles = new Set();
                     productosActivos.forEach(p => {
@@ -207,6 +230,10 @@
 
                 // NIVEL 1: VISTA PRINCIPAL
                 } else {
+                    // En el inicio, ocultamos los de retroceso/catálogo
+                    btnHomeCatalog.style.display = "none";
+                    btnBack.style.display = "none";
+
                     const catsDisponibles = new Set();
                     productosActivos.forEach(p => {
                         p.rutas_array.forEach(ruta => {
