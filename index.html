@@ -33,16 +33,6 @@
         const WA_NUMERO = "593XXXXXXXXX"; 
         const CSV_URL = "https://docs.google.com/spreadsheets/d/168Qg4rnF4Kjj0Y8RDKzQYov4ek3t0vrtarHTcc9qVxo/gviz/tq?tqx=out:csv&gid=0";
 
-        const METADATA_ESTRUCTURA = {
-            "Hogar": { imagen: "./assets/img/cat-hogar.jpg", subcategorias: { "Modulares": { imagen: "./assets/img/sub-modulares.jpg" }, "Decoración": { imagen: "./assets/img/sub-decoracion.jpg" } } },
-            "Vestimenta": { imagen: "./assets/img/cat-vestimenta.jpg", subcategorias: { "Para Ellas": { imagen: "./assets/img/sub-ellas.jpg" }, "Para Ellos": { imagen: "./assets/img/sub-ellos.jpg" }, "Para los Peques": { imagen: "./assets/img/sub-peques.jpg" }, "Para mis Mascotas": { imagen: "./assets/img/sub-mascotas.jpg" }, "Deportiva": { imagen: "./assets/img/sub-deportiva.jpg" }, "Coleccionable & Vintage": { imagen: "./assets/img/sub-coleccionable.jpg" }, "Calzado": { imagen: "./assets/img/sub-calzado.jpg" }, "Accesorios": { imagen: "./assets/img/sub-accesorios.jpg" } } },
-            "Audio & Video": { imagen: "./assets/img/cat-audiovideo.jpg", subcategorias: { "Portátiles": { imagen: "./assets/img/sub-portatiles.jpg" }, "Sistemas Fijos": { imagen: "./assets/img/sub-sistemasfijos.jpg" } } },
-            "Automotriz": { imagen: "./assets/img/cat-automotriz.jpg", subcategorias: { "Mantenimiento & Cuidado": { imagen: "./assets/img/sub-mantenimiento.jpg" }, "Equipamiento & Emergencia": { imagen: "./assets/img/sub-equipamiento.jpg" }, "Protección & Confort": { imagen: "./assets/img/sub-proteccion.jpg" } } },
-            "Juegos & Entretenimiento": { imagen: "./assets/img/cat-juegos.jpg", subcategorias: { "Eventos": { imagen: "./assets/img/sub-eventos.jpg" }, "Bebidas Alcohólicas": { imagen: "./assets/img/sub-bebidas.jpg" }, "Juegos": { imagen: "./assets/img/sub-juegosmesa.jpg" } } },
-            "Higiene & Cuidado Personal": { imagen: "./assets/img/cat-higiene.jpg", subcategorias: { "Make-up": { imagen: "./assets/img/sub-makeup.jpg" }, "Personal Care": { imagen: "./assets/img/sub-personalcare.jpg" }, "Wellness (Nutrición)": { imagen: "./assets/img/sub-wellness.jpg" } } }
-        };
-
-        // PARSER ROBUSTO
         function parseCSV(text) {
             const result = [];
             const rows = text.split('\n').filter(row => row.trim().length > 0);
@@ -65,7 +55,7 @@
                 return cols;
             };
 
-            const headers = parseRow(rows[0]).map(h => h.replace(/^"|"$/g, ''));
+            const headers = parseRow(rows[0]).map(h => h.replace(/^"|"$/g, '').toLowerCase());
 
             for (let i = 1; i < rows.length; i++) {
                 const cols = parseRow(rows[i]);
@@ -74,8 +64,9 @@
                     obj[headers[j]] = cols[j] || '';
                 }
 
-                obj.categorias = obj.categorias ? obj.categorias.split(',').map(c => c.trim()) : [];
-                obj.subcategorias = obj.subcategorias ? obj.subcategorias.split(',').map(s => s.trim()) : [];
+                // Lee la nueva columna "rutas" y la separa
+                // Ejemplo de ruta: "Vestimenta > Deportiva"
+                obj.rutas_array = obj.rutas ? obj.rutas.split(',').map(r => r.trim()) : [];
                 obj.stock = Number(obj.stock) || 0;
                 obj.precio_referencial = Number(obj.precio_referencial) || 0;
                 obj.precio_outlet = Number(obj.precio_outlet) || 0;
@@ -84,15 +75,23 @@
             return result;
         }
 
+        // Función auxiliar para verificar si un producto pertenece a la ruta consultada
+        function perteneceARuta(producto, categoria, subcategoria) {
+            return producto.rutas_array.some(ruta => {
+                const partes = ruta.split('>').map(p => p.trim());
+                if (subcategoria) {
+                    return partes[0] === categoria && partes[1] === subcategoria;
+                }
+                return partes[0] === categoria;
+            });
+        }
+
         const params = new URLSearchParams(window.location.search);
         const catFiltro = params.get('cat');
         const subFiltro = params.get('sub');
 
         fetch(CSV_URL)
-            .then(res => {
-                if (!res.ok) throw new Error('Servidor respondió con código: ' + res.status);
-                return res.text();
-            })
+            .then(res => res.text())
             .then(csvText => {
                 const productosActivos = parseCSV(csvText).filter(p => p.stock > 0);
                 const cont = document.getElementById('contenedor');
@@ -101,27 +100,36 @@
 
                 cont.innerHTML = '';
 
+                // NIVEL 3: VISTA DE PRODUCTOS
                 if (catFiltro && subFiltro) {
-                    // NIVEL 3: Mostrar Productos
                     tit.innerText = `${catFiltro} / ${subFiltro}`;
                     btn.style.display = "inline-block";
                     btn.href = `?cat=${encodeURIComponent(catFiltro)}`;
-                    productosActivos.filter(p => p.categorias.includes(catFiltro) && p.subcategorias.includes(subFiltro)).forEach(p => {
-                        cont.innerHTML += `<div class="card"><img src="${p.imagen_url}" onerror="this.src='https://via.placeholder.com/240x160?text=Sin+Imagen'"><div class="card-body"><h3>${p.nombre}</h3><p class="precio-ref">Ref: $${p.precio_referencial.toFixed(2)}</p><p class="precio-out">Outlet: $${p.precio_outlet.toFixed(2)}</p><a href="https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(p.mensaje_compra)}" class="btn-wa">Comprar por WhatsApp</a></div></div>`;
-                    });
+                    
+                    const productosFiltrados = productosActivos.filter(p => perteneceARuta(p, catFiltro, subFiltro));
+
+                    if (productosFiltrados.length === 0) {
+                        cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay productos disponibles en esta sección actualmente.</p>`;
+                    } else {
+                        productosFiltrados.forEach(p => {
+                            cont.innerHTML += `<div class="card"><img src="${p.imagen_url}" onerror="this.src='https://via.placeholder.com/240x160?text=Sin+Imagen'"><div class="card-body"><h3>${p.nombre}</h3><p class="precio-ref">Ref: $${p.precio_referencial.toFixed(2)}</p><p class="precio-out">Outlet: $${p.precio_outlet.toFixed(2)}</p><a href="https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(p.mensaje_compra)}" class="btn-wa">Comprar por WhatsApp</a></div></div>`;
+                        });
+                    }
+
+                // NIVEL 2: VISTA DE SUBCATEGORÍAS
                 } else if (catFiltro) {
-                    // NIVEL 2: Mostrar Subcategorías de una Categoría
                     tit.innerText = catFiltro;
                     btn.style.display = "inline-block";
                     btn.href = "index.html";
+                    
                     const subsDisponibles = new Set();
                     
-                    // VALIDACIÓN JERÁRQUICA: Extraer subcategorías de los productos, pero verificar que pertenezcan a la categoría actual
-                    productosActivos.filter(p => p.categorias.includes(catFiltro)).forEach(p => {
-                        p.subcategorias.forEach(s => {
-                            // Solo agregamos la subcategoría si existe dentro de la categoría actual en nuestro METADATA_ESTRUCTURA
-                            if (METADATA_ESTRUCTURA[catFiltro] && METADATA_ESTRUCTURA[catFiltro].subcategorias && METADATA_ESTRUCTURA[catFiltro].subcategorias[s]) {
-                                subsDisponibles.add(s);
+                    productosActivos.forEach(p => {
+                        p.rutas_array.forEach(ruta => {
+                            const partes = ruta.split('>').map(p => p.trim());
+                            // Si la categoría coincide y existe una subcategoría, la añade
+                            if (partes[0] === catFiltro && partes[1]) {
+                                subsDisponibles.add(partes[1]);
                             }
                         });
                     });
@@ -130,28 +138,37 @@
                         cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay subcategorías con stock disponible.</p>`;
                     } else {
                         subsDisponibles.forEach(s => {
-                            const imgFija = METADATA_ESTRUCTURA[catFiltro].subcategorias[s].imagen;
-                            cont.innerHTML += `<a href="?cat=${encodeURIComponent(catFiltro)}&sub=${encodeURIComponent(s)}" class="card"><img src="${imgFija}" onerror="this.src='https://via.placeholder.com/240x160?text=Subcategoría'"><div class="card-body"><h3>${s}</h3><p style="color:#0056b3; font-weight:bold;">Ver productos →</p></div></a>`;
+                            // Al ser dinámico, generamos una imagen placeholder con el nombre de la subcategoría
+                            const imgFija = `https://via.placeholder.com/240x160?text=${encodeURIComponent(s)}`;
+                            cont.innerHTML += `<a href="?cat=${encodeURIComponent(catFiltro)}&sub=${encodeURIComponent(s)}" class="card"><img src="${imgFija}"><div class="card-body"><h3>${s}</h3><p style="color:#0056b3; font-weight:bold;">Ver productos →</p></div></a>`;
                         });
                     }
+
+                // NIVEL 1: VISTA DE CATEGORÍAS PRINCIPALES
                 } else {
-                    // NIVEL 1: Mostrar Categorías Principales
                     const catsDisponibles = new Set();
-                    productosActivos.forEach(p => p.categorias.forEach(c => catsDisponibles.add(c)));
-                    catsDisponibles.forEach(c => {
-                        const imgFija = METADATA_ESTRUCTURA[c]?.imagen || 'https://via.placeholder.com/240x160?text=' + encodeURIComponent(c);
-                        cont.innerHTML += `<a href="?cat=${encodeURIComponent(c)}" class="card"><img src="${imgFija}" onerror="this.src='https://via.placeholder.com/240x160?text=Categoría'"><div class="card-body"><h3>${c}</h3><p style="color:#0056b3; font-weight:bold;">Ver subcategorías →</p></a>`;
+                    
+                    productosActivos.forEach(p => {
+                        p.rutas_array.forEach(ruta => {
+                            const partes = ruta.split('>').map(p => p.trim());
+                            if (partes[0]) {
+                                catsDisponibles.add(partes[0]);
+                            }
+                        });
                     });
+
+                    if (catsDisponibles.size === 0) {
+                        cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">El catálogo se encuentra vacío por el momento.</p>`;
+                    } else {
+                        catsDisponibles.forEach(c => {
+                            const imgFija = `https://via.placeholder.com/240x160?text=${encodeURIComponent(c)}`;
+                            cont.innerHTML += `<a href="?cat=${encodeURIComponent(c)}" class="card"><img src="${imgFija}"><div class="card-body"><h3>${c}</h3><p style="color:#0056b3; font-weight:bold;">Ver subcategorías →</p></a>`;
+                        });
+                    }
                 }
             })
             .catch(err => {
-                document.getElementById('contenedor').innerHTML = `
-                    <div style="grid-column: 1/-1; padding: 20px; color: red; border: 2px solid red; border-radius: 12px; background: #fff0f0; margin-top: 20px;">
-                        <h3 style="margin-top:0;">⚠️ Error de Conexión</h3>
-                        <p>No se pudieron cargar los datos del inventario.</p>
-                        <p style="font-weight:bold;">Detalle:</p>
-                        <p style="font-size: 0.9em;">${err.message}</p>
-                    </div>`;
+                document.getElementById('contenedor').innerHTML = `<p style="color:red; text-align:center; grid-column:1/-1;">Error al cargar datos de inventario.</p>`;
             });
     </script>
 </body>
