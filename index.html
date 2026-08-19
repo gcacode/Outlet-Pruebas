@@ -42,20 +42,42 @@
             "Higiene & Cuidado Personal": { imagen: "./assets/img/cat-higiene.jpg", subcategorias: { "Make-up": { imagen: "./assets/img/sub-makeup.jpg" }, "Personal Care": { imagen: "./assets/img/sub-personalcare.jpg" }, "Wellness (Nutrición)": { imagen: "./assets/img/sub-wellness.jpg" } } }
         };
 
+        // PARSER ROBUSTO: Permite celdas con comas (Ej: "Vestimenta, Hogar")
         function parseCSV(text) {
-            const lines = text.split('\n');
             const result = [];
-            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                const currentline = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || lines[i].split(',');
+            const rows = text.split('\n').filter(row => row.trim().length > 0);
+            if (rows.length === 0) return result;
+
+            const parseRow = (row) => {
+                let cols = [];
+                let inQuotes = false;
+                let col = '';
+                for (let i = 0; i < row.length; i++) {
+                    let char = row[i];
+                    if (char === '"') {
+                        if (inQuotes && row[i+1] === '"') { col += '"'; i++; } // Comilla escapada
+                        else { inQuotes = !inQuotes; }
+                    } else if (char === ',' && !inQuotes) {
+                        cols.push(col.trim()); col = '';
+                    } else { col += char; }
+                }
+                cols.push(col.trim());
+                return cols;
+            };
+
+            const headers = parseRow(rows[0]).map(h => h.replace(/^"|"$/g, ''));
+
+            for (let i = 1; i < rows.length; i++) {
+                const cols = parseRow(rows[i]);
                 const obj = {};
                 for (let j = 0; j < headers.length; j++) {
-                    let val = currentline[j] ? currentline[j].trim().replace(/^"|"$/g, '') : '';
-                    obj[headers[j]] = val;
+                    obj[headers[j]] = cols[j] || '';
                 }
+
+                // Aquí se activa la transversalidad: divide por comas y crea un array de atributos
                 obj.categorias = obj.categorias ? obj.categorias.split(',').map(c => c.trim()) : [];
                 obj.subcategorias = obj.subcategorias ? obj.subcategorias.split(',').map(s => s.trim()) : [];
+                
                 obj.stock = Number(obj.stock) || 0;
                 obj.precio_referencial = Number(obj.precio_referencial) || 0;
                 obj.precio_outlet = Number(obj.precio_outlet) || 0;
