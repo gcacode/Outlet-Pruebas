@@ -153,8 +153,8 @@
                         productosFiltrados.forEach(p => {
                             // Renderizado condicional de características y links
                             const htmlSpecs = p.caracteristicas ? `<p class="caracteristicas-text">${p.caracteristicas}</p>` : '';
-                            const btnOficial = p.url_oficial ? `<a href="${p.url_oficial}" target="_blank" class="btn-ext btn-brand">🌐 Web Oficial</a>` : '';
-                            const btnCanva = p.url_canva ? `<a href="${p.url_canva}" target="_blank" class="btn-ext btn-canva">🎬 Ver Demo / Video</a>` : '';
+                            const btnOficial = p.url_oficial ? `<a href="${p.url_oficial}" target="_blank" class="btn-ext btn-brand">🌐 Ref/Especificaciones</a>` : '';
+                            const btnCanva = p.url_canva ? `<a href="${p.url_canva}" target="_blank" class="btn-ext btn-canva">🎬 Conoce más!</a>` : '';
 
                             cont.innerHTML += `
                                 <div class="card">
@@ -166,7 +166,7 @@
                                         </div>
                                         <div>
                                             <div class="precio-box">
-                                                <span class="precio-ref">Ref: $${p.precio_referencial.toFixed(2)}</span>
+                                                <span class="precio-ref">Precio: $${p.precio_referencial.toFixed(2)}</span>
                                                 <span class="precio-out">Outlet: $${p.precio_outlet.toFixed(2)}</span>
                                             </div>
                                             <div class="extra-links">
