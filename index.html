@@ -42,7 +42,7 @@
             "Higiene & Cuidado Personal": { imagen: "./assets/img/cat-higiene.jpg", subcategorias: { "Make-up": { imagen: "./assets/img/sub-makeup.jpg" }, "Personal Care": { imagen: "./assets/img/sub-personalcare.jpg" }, "Wellness (Nutrición)": { imagen: "./assets/img/sub-wellness.jpg" } } }
         };
 
-        // PARSER ROBUSTO: Permite celdas con comas (Ej: "Vestimenta, Hogar")
+        // PARSER ROBUSTO
         function parseCSV(text) {
             const result = [];
             const rows = text.split('\n').filter(row => row.trim().length > 0);
@@ -55,7 +55,7 @@
                 for (let i = 0; i < row.length; i++) {
                     let char = row[i];
                     if (char === '"') {
-                        if (inQuotes && row[i+1] === '"') { col += '"'; i++; } // Comilla escapada
+                        if (inQuotes && row[i+1] === '"') { col += '"'; i++; } 
                         else { inQuotes = !inQuotes; }
                     } else if (char === ',' && !inQuotes) {
                         cols.push(col.trim()); col = '';
@@ -74,10 +74,8 @@
                     obj[headers[j]] = cols[j] || '';
                 }
 
-                // Aquí se activa la transversalidad: divide por comas y crea un array de atributos
                 obj.categorias = obj.categorias ? obj.categorias.split(',').map(c => c.trim()) : [];
                 obj.subcategorias = obj.subcategorias ? obj.subcategorias.split(',').map(s => s.trim()) : [];
-                
                 obj.stock = Number(obj.stock) || 0;
                 obj.precio_referencial = Number(obj.precio_referencial) || 0;
                 obj.precio_outlet = Number(obj.precio_outlet) || 0;
@@ -104,6 +102,7 @@
                 cont.innerHTML = '';
 
                 if (catFiltro && subFiltro) {
+                    // NIVEL 3: Mostrar Productos
                     tit.innerText = `${catFiltro} / ${subFiltro}`;
                     btn.style.display = "inline-block";
                     btn.href = `?cat=${encodeURIComponent(catFiltro)}`;
@@ -111,20 +110,32 @@
                         cont.innerHTML += `<div class="card"><img src="${p.imagen_url}" onerror="this.src='https://via.placeholder.com/240x160?text=Sin+Imagen'"><div class="card-body"><h3>${p.nombre}</h3><p class="precio-ref">Ref: $${p.precio_referencial.toFixed(2)}</p><p class="precio-out">Outlet: $${p.precio_outlet.toFixed(2)}</p><a href="https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(p.mensaje_compra)}" class="btn-wa">Comprar por WhatsApp</a></div></div>`;
                     });
                 } else if (catFiltro) {
+                    // NIVEL 2: Mostrar Subcategorías de una Categoría
                     tit.innerText = catFiltro;
                     btn.style.display = "inline-block";
                     btn.href = "index.html";
                     const subsDisponibles = new Set();
-                    productosActivos.filter(p => p.categorias.includes(catFiltro)).forEach(p => p.subcategorias.forEach(s => subsDisponibles.add(s)));
+                    
+                    // VALIDACIÓN JERÁRQUICA: Extraer subcategorías de los productos, pero verificar que pertenezcan a la categoría actual
+                    productosActivos.filter(p => p.categorias.includes(catFiltro)).forEach(p => {
+                        p.subcategorias.forEach(s => {
+                            // Solo agregamos la subcategoría si existe dentro de la categoría actual en nuestro METADATA_ESTRUCTURA
+                            if (METADATA_ESTRUCTURA[catFiltro] && METADATA_ESTRUCTURA[catFiltro].subcategorias && METADATA_ESTRUCTURA[catFiltro].subcategorias[s]) {
+                                subsDisponibles.add(s);
+                            }
+                        });
+                    });
+
                     if (subsDisponibles.size === 0) {
                         cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay subcategorías con stock disponible.</p>`;
                     } else {
                         subsDisponibles.forEach(s => {
-                            const imgFija = METADATA_ESTRUCTURA[catFiltro]?.subcategorias[s]?.imagen || 'https://via.placeholder.com/240x160?text=' + encodeURIComponent(s);
+                            const imgFija = METADATA_ESTRUCTURA[catFiltro].subcategorias[s].imagen;
                             cont.innerHTML += `<a href="?cat=${encodeURIComponent(catFiltro)}&sub=${encodeURIComponent(s)}" class="card"><img src="${imgFija}" onerror="this.src='https://via.placeholder.com/240x160?text=Subcategoría'"><div class="card-body"><h3>${s}</h3><p style="color:#0056b3; font-weight:bold;">Ver productos →</p></div></a>`;
                         });
                     }
                 } else {
+                    // NIVEL 1: Mostrar Categorías Principales
                     const catsDisponibles = new Set();
                     productosActivos.forEach(p => p.categorias.forEach(c => catsDisponibles.add(c)));
                     catsDisponibles.forEach(c => {
