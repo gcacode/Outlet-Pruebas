@@ -66,7 +66,19 @@
         .btn-brand { background: #4a5568; color: white; }
         .btn-canva { background: #00c4cc; color: white; }
 
-        h1 { text-align: center; margin-bottom: 30px; color: #111; text-shadow: 0 1px 2px rgba(255,255,255,0.8); }
+        h1 { text-align: center; margin-bottom: 15px; color: #111; text-shadow: 0 1px 2px rgba(255,255,255,0.8); }
+
+        /* Estilos del Buscador */
+        .search-container { display: flex; justify-content: center; margin-bottom: 30px; }
+        .search-container form { display: flex; width: 100%; max-width: 600px; gap: 10px; }
+        .search-input { flex-grow: 1; padding: 12px 15px; border: 2px solid #ccc; border-radius: 6px; font-size: 1rem; outline: none; transition: border-color 0.2s; background: rgba(255,255,255,0.9); }
+        .search-input:focus { border-color: #0056b3; }
+        .search-btn { background: #0056b3; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: background 0.2s; }
+        .search-btn:hover { background: #004494; }
+        
+        /* Título de categoría en búsquedas */
+        .cat-header { grid-column: 1 / -1; margin-top: 20px; margin-bottom: 5px; border-bottom: 2px solid #0056b3; padding-bottom: 8px; color: #0056b3; font-size: 1.5rem; text-align: left; }
+
     </style>
 </head>
 <body>
@@ -82,6 +94,15 @@
         </div>
 
         <h1 id="titulo">Algo que te sorprende, siempre!</h1>
+
+        <!-- Barra de Búsqueda -->
+        <div class="search-container">
+            <form id="search-form">
+                <input type="text" id="search-input" class="search-input" placeholder="Buscar por nombre o característica..." autocomplete="off">
+                <button type="submit" class="search-btn">🔍 Buscar</button>
+            </form>
+        </div>
+
         <div id="contenedor" class="grid">Cargando catálogo...</div>
     </div>
 
@@ -142,6 +163,23 @@
         const params = new URLSearchParams(window.location.search);
         const catFiltro = params.get('cat');
         const subFiltro = params.get('sub');
+        const searchFiltro = params.get('q'); // Parámetro para la búsqueda
+
+        // Evento para procesar la búsqueda
+        document.getElementById('search-form').addEventListener('submit', function(e) {
+            e.preventDefault(); // Evitar que la página recargue de la forma tradicional
+            const val = document.getElementById('search-input').value.trim();
+            if(val !== '') {
+                window.location.href = `?q=${encodeURIComponent(val)}`;
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Rellenar el input de búsqueda si hay una búsqueda activa
+        if (searchFiltro) {
+            document.getElementById('search-input').value = searchFiltro;
+        }
 
         fetch(CSV_URL)
             .then(res => res.text())
@@ -156,8 +194,72 @@
 
                 cont.innerHTML = '';
 
+                // NIVEL NUEVO: VISTA DE BÚSQUEDA
+                if (searchFiltro) {
+                    tit.innerText = `Resultados para: "${searchFiltro}"`;
+                    btnHomeCatalog.style.display = "inline-block";
+                    
+                    const query = searchFiltro.toLowerCase();
+                    
+                    // Filtrar por nombre y características
+                    const productosFiltrados = productosActivos.filter(p => {
+                        const nombreProd = (p.nombre || "").toLowerCase();
+                        const caracProd = (p.caracteristicas || "").toLowerCase();
+                        return nombreProd.includes(query) || caracProd.includes(query);
+                    });
+
+                    if (productosFiltrados.length === 0) {
+                        cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No se encontraron productos con esos términos.</p>`;
+                    } else {
+                        // Ordenar productos alfabéticamente según su categoría principal
+                        productosFiltrados.sort((a, b) => {
+                            const catA = a.rutas_array.length > 0 ? a.rutas_array[0].split('>')[0].trim() : "Otros";
+                            const catB = b.rutas_array.length > 0 ? b.rutas_array[0].split('>')[0].trim() : "Otros";
+                            return catA.localeCompare(catB);
+                        });
+
+                        let currentCategory = "";
+
+                        productosFiltrados.forEach(p => {
+                            // Extraer la categoría del producto
+                            const catP = p.rutas_array.length > 0 ? p.rutas_array[0].split('>')[0].trim() : "Otros";
+                            
+                            // Imprimir encabezado de categoría si cambia
+                            if (catP !== currentCategory) {
+                                cont.innerHTML += `<h2 class="cat-header">📁 ${catP}</h2>`;
+                                currentCategory = catP;
+                            }
+
+                            const htmlSpecs = p.caracteristicas ? `<p class="caracteristicas-text">${p.caracteristicas}</p>` : '';
+                            const btnOficial = p.url_oficial ? `<a href="${p.url_oficial}" target="_blank" class="btn-ext btn-brand">🌐 Ref/Especificaciones</a>` : '';
+                            const btnCanva = p.url_canva ? `<a href="${p.url_canva}" target="_blank" class="btn-ext btn-canva">🎬 Conoce más!</a>` : '';
+
+                            cont.innerHTML += `
+                                <div class="card">
+                                    <img src="${p.imagen_url}" onerror="this.src='https://via.placeholder.com/280x180?text=Sin+Imagen'">
+                                    <div class="card-body">
+                                        <div>
+                                            <h3>${p.nombre}</h3>
+                                            ${htmlSpecs}
+                                        </div>
+                                        <div>
+                                            <div class="precio-box">
+                                                <span class="precio-ref">Precio: $${p.precio_referencial.toFixed(0)}</span>
+                                                <span class="precio-out">Outlet: $${p.precio_outlet.toFixed(0)}</span>
+                                            </div>
+                                            <div class="extra-links">
+                                                ${btnOficial}
+                                                ${btnCanva}
+                                            </div>
+                                            <a href="https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(p.mensaje_compra)}" class="btn-wa" target="_blank">Lo quiero!</a>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+
                 // NIVEL 3: VISTA DE PRODUCTOS
-                if (catFiltro && subFiltro) {
+                } else if (catFiltro && subFiltro) {
                     tit.innerText = `${catFiltro} / ${subFiltro}`;
                     
                     // Mostrar botones
@@ -204,9 +306,9 @@
                 } else if (catFiltro) {
                     tit.innerText = catFiltro;
                     
-                    // Mostrar el botón de catálogo principal (ya que aquí funciona como volver)
+                    // Mostrar el botón de catálogo principal
                     btnHomeCatalog.style.display = "inline-block";
-                    btnBack.style.display = "none"; // Se oculta porque hace lo mismo que Catálogo Principal en este nivel
+                    btnBack.style.display = "none";
                     
                     const subsDisponibles = new Set();
                     productosActivos.forEach(p => {
@@ -229,7 +331,6 @@
 
                 // NIVEL 1: VISTA PRINCIPAL
                 } else {
-                    // En el inicio, ocultamos los de retroceso/catálogo
                     btnHomeCatalog.style.display = "none";
                     btnBack.style.display = "none";
 
