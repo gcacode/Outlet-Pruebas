@@ -98,27 +98,32 @@
         const WA_NUMERO = "593964230521"; 
         const CSV_URL = "https://docs.google.com/spreadsheets/d/168Qg4rnF4Kjj0Y8RDKzQYov4ek3t0vrtarHTcc9qVxo/gviz/tq?tqx=out:csv&gid=0";
 
+        // Diccionario de imágenes personalizadas para las categorías principales
+        const imagenesCategorias = {
+            "Hogar": "./assets/img/hogar.jpg",
+            "Vestimenta": "./assets/img/vestimenta.jpg",
+            "Automotriz": "./assets/img/automotriz.jpg",
+            "Juegos & Entretenimiento": "./assets/img/juegos.jpg",
+            "Audio & Video": "./assets/img/audio.jpg"
+        };
+
         const normalizeText = (text) => {
             if (!text) return "";
             return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         };
 
-        // Función corregida: Extrae la descripción y oculta los TAGS visualmente
         function formatDisplaySpecs(text) {
             if (!text) return '';
             let displaySpecs = text;
             const tagIndex = displaySpecs.toUpperCase().indexOf("TAGS:");
             
-            // Si encuentra la palabra "TAGS:", recorta el texto hasta ahí
             if (tagIndex !== -1) {
                 displaySpecs = displaySpecs.substring(0, tagIndex).trim();
             }
             
-            // Respeta los saltos de línea originales (Alt + Enter)
             return displaySpecs.replace(/\n/g, '<br>');
         }
 
-        // Lector de CSV corregido: Ahora tolera saltos de línea (Alt + Enter) dentro de las celdas
         function parseCSV(text) {
             const result = [];
             let rows = [];
@@ -203,7 +208,6 @@
             document.getElementById('search-input').value = searchFiltro;
         }
 
-        // Anti-caché incluido en la URL para forzar actualización inmediata
         fetch(CSV_URL + "&nocache=" + new Date().getTime())
             .then(res => res.text())
             .then(csvText => {
@@ -227,7 +231,6 @@
                         const nombreProd = normalizeText(p.nombre);
                         const caracProd = normalizeText(p.caracteristicas);
     
-                        // Regla para buscar la palabra completa
                         const regex = new RegExp(`\\b${query}\\b`, 'i');
     
                         return regex.test(nombreProd) || regex.test(caracProd);
@@ -251,7 +254,6 @@
                                 currentCategory = catP;
                             }
 
-                            // AQUI SE APLICA EL OCULTAMIENTO DE TAGS
                             const htmlSpecs = p.caracteristicas ? `<p class="caracteristicas-text">${formatDisplaySpecs(p.caracteristicas)}</p>` : '';
                             const btnOficial = p.url_oficial ? `<a href="${p.url_oficial}" target="_blank" class="btn-ext btn-brand">🌐 Ref/Especificaciones</a>` : '';
                             const btnCanva = p.url_canva ? `<a href="${p.url_canva}" target="_blank" class="btn-ext btn-canva">🎬 Conoce más!</a>` : '';
@@ -294,7 +296,6 @@
                         cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay productos disponibles en esta sección actualmente.</p>`;
                     } else {
                         productosFiltrados.forEach(p => {
-                            // AQUI SE APLICA EL OCULTAMIENTO DE TAGS
                             const htmlSpecs = p.caracteristicas ? `<p class="caracteristicas-text">${formatDisplaySpecs(p.caracteristicas)}</p>` : '';
                             const btnOficial = p.url_oficial ? `<a href="${p.url_oficial}" target="_blank" class="btn-ext btn-brand">🌐 Ref/Especificaciones</a>` : '';
                             const btnCanva = p.url_canva ? `<a href="${p.url_canva}" target="_blank" class="btn-ext btn-canva">🎬 Conoce más!</a>` : '';
@@ -348,7 +349,7 @@
                         });
                     }
 
-                // VISTA PRINCIPAL
+                // VISTA PRINCIPAL (Con imágenes personalizadas y respaldo)
                 } else {
                     btnHomeCatalog.style.display = "none";
                     btnBack.style.display = "none";
@@ -367,8 +368,15 @@
                         cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">El catálogo se encuentra vacío por el momento.</p>`;
                     } else {
                         catsDisponibles.forEach(c => {
-                            const imgFija = `https://via.placeholder.com/280x180?text=${encodeURIComponent(c)}`;
-                            cont.innerHTML += `<a href="?cat=${encodeURIComponent(c)}" class="card"><img src="${imgFija}"><div class="card-body"><h3>${c}</h3><p style="color:#0056b3; font-weight:bold;">justo para ti! →</p></div></a>`;
+                            const imgFija = imagenesCategorias[c] || `https://via.placeholder.com/280x180?text=${encodeURIComponent(c)}`;
+                            cont.innerHTML += `
+                                <a href="?cat=${encodeURIComponent(c)}" class="card">
+                                    <img src="${imgFija}" onerror="this.src='https://via.placeholder.com/280x180?text=${encodeURIComponent(c)}'">
+                                    <div class="card-body">
+                                        <h3>${c}</h3>
+                                        <p style="color:#0056b3; font-weight:bold;">justo para ti! →</p>
+                                    </div>
+                                </a>`;
                         });
                     }
                 }
