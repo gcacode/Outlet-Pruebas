@@ -7,13 +7,11 @@
     <style>
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            /* Imagen o Collage de fondo para la vista general */
             background-image: url('./assets/img/logo.jpg'); 
             background-size: cover; 
             background-position: center; 
             background-attachment: fixed; 
             background-repeat: no-repeat; 
-            /* Capa de superposición para legibilidad */
             background-color: rgba(244, 246, 249, 0.88); 
             background-blend-mode: overlay; 
             padding: 20px; 
@@ -25,7 +23,6 @@
         .container { max-width: 1100px; margin: 0 auto; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         
-        /* Tarjetas con efecto translúcido */
         .card { 
             background: rgba(255, 255, 255, 0.95); 
             border-radius: 12px; 
@@ -51,13 +48,11 @@
         .precio-ref { text-decoration: line-through; color: #888; font-size: 0.85rem; margin-right: 5px; }
         .precio-out { color: #d9534f; font-weight: bold; font-size: 1.2rem; }
         
-        /* Contenedor de Botones Superiores */
         .top-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
         
-        /* Botones de acción */
         .btn-main { background: #0056b3; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; }
-        .btn-home-canva { background: #8b3dff; } /* Morado Canva */
-        .btn-catalog { background: #4a5568; } /* Gris oscuro */
+        .btn-home-canva { background: #8b3dff; } 
+        .btn-catalog { background: #4a5568; } 
         
         .btn-wa { background: #25D366; color: white; padding: 10px; border-radius: 6px; text-decoration: none; display: block; margin-top: 10px; font-weight: bold; font-size: 0.9rem; }
         
@@ -68,7 +63,6 @@
 
         h1 { text-align: center; margin-bottom: 15px; color: #111; text-shadow: 0 1px 2px rgba(255,255,255,0.8); }
 
-        /* Estilos del Buscador */
         .search-container { display: flex; justify-content: center; margin-bottom: 30px; }
         .search-container form { display: flex; width: 100%; max-width: 600px; gap: 10px; }
         .search-input { flex-grow: 1; padding: 12px 15px; border: 2px solid #ccc; border-radius: 6px; font-size: 1rem; outline: none; transition: border-color 0.2s; background: rgba(255,255,255,0.9); }
@@ -76,29 +70,23 @@
         .search-btn { background: #0056b3; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: background 0.2s; }
         .search-btn:hover { background: #004494; }
         
-        /* Título de categoría en búsquedas */
         .cat-header { grid-column: 1 / -1; margin-top: 20px; margin-bottom: 5px; border-bottom: 2px solid #0056b3; padding-bottom: 8px; color: #0056b3; font-size: 1.5rem; text-align: left; }
-
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- Panel de Navegación Superior -->
         <div class="top-nav">
             <a href="https://hannalabanana.my.canva.site/home" target="_blank" class="btn-main btn-home-canva">🏠 Home</a>
-            
-            <!-- Botones dinámicos (ocultos por defecto) -->
             <a href="index.html" id="btn-home-catalog" class="btn-main btn-catalog" style="display:none;">📦 Catálogo Principal</a>
             <a href="#" id="btn-back" class="btn-main" style="display:none;">← Volver</a>
         </div>
 
         <h1 id="titulo">Algo que te sorprende, siempre!</h1>
 
-        <!-- Barra de Búsqueda -->
         <div class="search-container">
             <form id="search-form">
-                <input type="text" id="search-input" class="search-input" placeholder="Buscar por nombre o característica..." autocomplete="off">
+                <input type="text" id="search-input" class="search-input" placeholder="Buscar producto o característica..." autocomplete="off">
                 <button type="submit" class="search-btn">🔍 Buscar</button>
             </form>
         </div>
@@ -110,9 +98,46 @@
         const WA_NUMERO = "593964230521"; 
         const CSV_URL = "https://docs.google.com/spreadsheets/d/168Qg4rnF4Kjj0Y8RDKzQYov4ek3t0vrtarHTcc9qVxo/gviz/tq?tqx=out:csv&gid=0";
 
+        const normalizeText = (text) => {
+            if (!text) return "";
+            return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        };
+
+        // Función corregida: Extrae la descripción y oculta los TAGS visualmente
+        function formatDisplaySpecs(text) {
+            if (!text) return '';
+            let displaySpecs = text;
+            const tagIndex = displaySpecs.toUpperCase().indexOf("TAGS:");
+            
+            // Si encuentra la palabra "TAGS:", recorta el texto hasta ahí
+            if (tagIndex !== -1) {
+                displaySpecs = displaySpecs.substring(0, tagIndex).trim();
+            }
+            
+            // Respeta los saltos de línea originales (Alt + Enter)
+            return displaySpecs.replace(/\n/g, '<br>');
+        }
+
+        // Lector de CSV corregido: Ahora tolera saltos de línea (Alt + Enter) dentro de las celdas
         function parseCSV(text) {
             const result = [];
-            const rows = text.split('\n').filter(row => row.trim().length > 0);
+            let rows = [];
+            let inQuotes = false;
+            let currentRow = '';
+            
+            for (let i = 0; i < text.length; i++) {
+                let char = text[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                    currentRow += char;
+                } else if (char === '\n' && !inQuotes) {
+                    rows.push(currentRow);
+                    currentRow = '';
+                } else {
+                    currentRow += char;
+                }
+            }
+            if (currentRow.trim().length > 0) rows.push(currentRow);
             if (rows.length === 0) return result;
 
             const parseRow = (row) => {
@@ -140,7 +165,6 @@
                 for (let j = 0; j < headers.length; j++) {
                     obj[headers[j]] = cols[j] ? cols[j].replace(/^"|"$/g, '') : '';
                 }
-
                 obj.rutas_array = obj.rutas ? obj.rutas.split(',').map(r => r.trim()) : [];
                 obj.stock = Number(obj.stock) || 0;
                 obj.precio_referencial = Number(obj.precio_referencial) || 0;
@@ -163,11 +187,10 @@
         const params = new URLSearchParams(window.location.search);
         const catFiltro = params.get('cat');
         const subFiltro = params.get('sub');
-        const searchFiltro = params.get('q'); // Parámetro para la búsqueda
+        const searchFiltro = params.get('q'); 
 
-        // Evento para procesar la búsqueda
         document.getElementById('search-form').addEventListener('submit', function(e) {
-            e.preventDefault(); // Evitar que la página recargue de la forma tradicional
+            e.preventDefault(); 
             const val = document.getElementById('search-input').value.trim();
             if(val !== '') {
                 window.location.href = `?q=${encodeURIComponent(val)}`;
@@ -176,42 +199,39 @@
             }
         });
 
-        // Rellenar el input de búsqueda si hay una búsqueda activa
         if (searchFiltro) {
             document.getElementById('search-input').value = searchFiltro;
         }
 
-        fetch(CSV_URL + '&nocache=' + new Date().getTime())
+        // Anti-caché incluido en la URL para forzar actualización inmediata
+        fetch(CSV_URL + "&nocache=" + new Date().getTime())
             .then(res => res.text())
             .then(csvText => {
                 const productosActivos = parseCSV(csvText).filter(p => p.stock > 0);
                 const cont = document.getElementById('contenedor');
                 const tit = document.getElementById('titulo');
                 
-                // Referencias a los botones nuevos
                 const btnBack = document.getElementById('btn-back');
                 const btnHomeCatalog = document.getElementById('btn-home-catalog');
 
                 cont.innerHTML = '';
 
-                // NIVEL NUEVO: VISTA DE BÚSQUEDA
+                // BÚSQUEDA
                 if (searchFiltro) {
                     tit.innerText = `Resultados para: "${searchFiltro}"`;
                     btnHomeCatalog.style.display = "inline-block";
                     
-                    const query = searchFiltro.toLowerCase();
+                    const query = normalizeText(searchFiltro);
                     
-                    // Filtrar por nombre y características
                     const productosFiltrados = productosActivos.filter(p => {
-                        const nombreProd = (p.nombre || "").toLowerCase();
-                        const caracProd = (p.caracteristicas || "").toLowerCase();
+                        const nombreProd = normalizeText(p.nombre);
+                        const caracProd = normalizeText(p.caracteristicas);
                         return nombreProd.includes(query) || caracProd.includes(query);
                     });
 
                     if (productosFiltrados.length === 0) {
                         cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No se encontraron productos con esos términos.</p>`;
                     } else {
-                        // Ordenar productos alfabéticamente según su categoría principal
                         productosFiltrados.sort((a, b) => {
                             const catA = a.rutas_array.length > 0 ? a.rutas_array[0].split('>')[0].trim() : "Otros";
                             const catB = b.rutas_array.length > 0 ? b.rutas_array[0].split('>')[0].trim() : "Otros";
@@ -221,16 +241,14 @@
                         let currentCategory = "";
 
                         productosFiltrados.forEach(p => {
-                            // Extraer la categoría del producto
                             const catP = p.rutas_array.length > 0 ? p.rutas_array[0].split('>')[0].trim() : "Otros";
-                            
-                            // Imprimir encabezado de categoría si cambia
                             if (catP !== currentCategory) {
                                 cont.innerHTML += `<h2 class="cat-header">📁 ${catP}</h2>`;
                                 currentCategory = catP;
                             }
 
-                            const htmlSpecs = p.caracteristicas ? `<p class="caracteristicas-text">${p.caracteristicas}</p>` : '';
+                            // AQUI SE APLICA EL OCULTAMIENTO DE TAGS
+                            const htmlSpecs = p.caracteristicas ? `<p class="caracteristicas-text">${formatDisplaySpecs(p.caracteristicas)}</p>` : '';
                             const btnOficial = p.url_oficial ? `<a href="${p.url_oficial}" target="_blank" class="btn-ext btn-brand">🌐 Ref/Especificaciones</a>` : '';
                             const btnCanva = p.url_canva ? `<a href="${p.url_canva}" target="_blank" class="btn-ext btn-canva">🎬 Conoce más!</a>` : '';
 
@@ -258,14 +276,12 @@
                         });
                     }
 
-                // NIVEL 3: VISTA DE PRODUCTOS
+                // PRODUCTOS
                 } else if (catFiltro && subFiltro) {
                     tit.innerText = `${catFiltro} / ${subFiltro}`;
-                    
-                    // Mostrar botones
                     btnHomeCatalog.style.display = "inline-block";
                     btnBack.style.display = "inline-block";
-                    btnBack.href = `?cat=${encodeURIComponent(catFiltro)}`; // Vuelve a subcategorías
+                    btnBack.href = `?cat=${encodeURIComponent(catFiltro)}`; 
                     btnBack.innerText = "← Volver a " + catFiltro;
                     
                     const productosFiltrados = productosActivos.filter(p => perteneceARuta(p, catFiltro, subFiltro));
@@ -274,7 +290,8 @@
                         cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay productos disponibles en esta sección actualmente.</p>`;
                     } else {
                         productosFiltrados.forEach(p => {
-                            const htmlSpecs = p.caracteristicas ? `<p class="caracteristicas-text">${p.caracteristicas}</p>` : '';
+                            // AQUI SE APLICA EL OCULTAMIENTO DE TAGS
+                            const htmlSpecs = p.caracteristicas ? `<p class="caracteristicas-text">${formatDisplaySpecs(p.caracteristicas)}</p>` : '';
                             const btnOficial = p.url_oficial ? `<a href="${p.url_oficial}" target="_blank" class="btn-ext btn-brand">🌐 Ref/Especificaciones</a>` : '';
                             const btnCanva = p.url_canva ? `<a href="${p.url_canva}" target="_blank" class="btn-ext btn-canva">🎬 Conoce más!</a>` : '';
 
@@ -302,11 +319,9 @@
                         });
                     }
 
-                // NIVEL 2: VISTA DE SUBCATEGORÍAS
+                // SUBCATEGORÍAS
                 } else if (catFiltro) {
                     tit.innerText = catFiltro;
-                    
-                    // Mostrar el botón de catálogo principal
                     btnHomeCatalog.style.display = "inline-block";
                     btnBack.style.display = "none";
                     
@@ -329,7 +344,7 @@
                         });
                     }
 
-                // NIVEL 1: VISTA PRINCIPAL
+                // VISTA PRINCIPAL
                 } else {
                     btnHomeCatalog.style.display = "none";
                     btnBack.style.display = "none";
