@@ -181,7 +181,7 @@
             document.getElementById('search-input').value = searchFiltro;
         }
 
-        fetch(CSV_URL)
+        fetch(CSV_URL + '&nocache=' + new Date().getTime())
             .then(res => res.text())
             .then(csvText => {
                 const productosActivos = parseCSV(csvText).filter(p => p.stock > 0);
