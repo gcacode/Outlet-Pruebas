@@ -223,10 +223,14 @@
                     
                     const query = normalizeText(searchFiltro);
                     
-                    const productosFiltrados = productosActivos.filter(p => {
+                   const productosFiltrados = productosActivos.filter(p => {
                         const nombreProd = normalizeText(p.nombre);
                         const caracProd = normalizeText(p.caracteristicas);
-                        return nombreProd.includes(query) || caracProd.includes(query);
+    
+                        // Regla para buscar la palabra completa
+                        const regex = new RegExp(`\\b${query}\\b`, 'i');
+    
+                        return regex.test(nombreProd) || regex.test(caracProd);
                     });
 
                     if (productosFiltrados.length === 0) {
