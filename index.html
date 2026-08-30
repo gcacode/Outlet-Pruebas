@@ -198,4 +198,201 @@
                     obj[headers[j]] = cols[j] ? cols[j].replace(/^"|"$/g, '') : '';
                 }
                 obj.rutas_array = obj.rutas ? obj.rutas.split(',').map(r => r.trim()) : [];
-                obj.stock = Number(
+                obj.stock = Number(obj.stock) || 0;
+                obj.precio_referencial = Number(obj.precio_referencial) || 0;
+                obj.precio_outlet = Number(obj.precio_outlet) || 0;
+                result.push(obj);
+            }
+            return result;
+        }
+
+        function perteneceARuta(producto, categoria, subcategoria) {
+            return producto.rutas_array.some(ruta => {
+                const partes = ruta.split('>').map(p => p.trim());
+                if (subcategoria) {
+                    return partes[0] === categoria && partes[1] === subcategoria;
+                }
+                return partes[0] === categoria;
+            });
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const catFiltro = params.get('cat');
+        const subFiltro = params.get('sub');
+        const searchFiltro = params.get('q'); 
+
+        document.getElementById('search-form').addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            const val = document.getElementById('search-input').value.trim();
+            if(val !== '') {
+                window.location.href = `?q=${encodeURIComponent(val)}`;
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        if (searchFiltro) {
+            document.getElementById('search-input').value = searchFiltro;
+        }
+
+        fetch(CSV_URL + "&nocache=" + new Date().getTime())
+            .then(res => res.text())
+            .then(csvText => {
+                const productosActivos = parseCSV(csvText).filter(p => p.stock > 0);
+                const cont = document.getElementById('contenedor');
+                const tit = document.getElementById('titulo');
+                
+                const btnBack = document.getElementById('btn-back');
+                const btnHomeCatalog = document.getElementById('btn-home-catalog');
+
+                cont.innerHTML = '';
+
+                // BÚSQUEDA
+                if (searchFiltro) {
+                    tit.innerText = `Resultados para: "${searchFiltro}"`;
+                    btnHomeCatalog.style.display = "inline-block";
+                    
+                    const query = normalizeText(searchFiltro);
+                    
+                   const productosFiltrados = productosActivos.filter(p => {
+                        const nombreProd = normalizeText(p.nombre);
+                        const caracProd = normalizeText(p.caracteristicas);
+    
+                        const regex = new RegExp(`\\b${query}\\b`, 'i');
+    
+                        return regex.test(nombreProd) || regex.test(caracProd);
+                    });
+
+                    if (productosFiltrados.length === 0) {
+                        cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No se encontraron productos con esos términos.</p>`;
+                    } else {
+                        productosFiltrados.sort((a, b) => {
+                            const catA = a.rutas_array.length > 0 ? a.rutas_array[0].split('>')[0].trim() : "Otros";
+                            const catB = b.rutas_array.length > 0 ? b.rutas_array[0].split('>')[0].trim() : "Otros";
+                            return catA.localeCompare(catB);
+                        });
+
+                        let currentCategory = "";
+
+                        productosFiltrados.forEach(p => {
+                            const catP = p.rutas_array.length > 0 ? p.rutas_array[0].split('>')[0].trim() : "Otros";
+                            if (catP !== currentCategory) {
+                                cont.innerHTML += `<h2 class="cat-header">📁 ${catP}</h2>`;
+                                currentCategory = catP;
+                            }
+
+                            const htmlSpecs = p.caracteristicas ? `<p class="caracteristicas-text">${formatDisplaySpecs(p.caracteristicas)}</p>` : '';
+                            const btnOficial = p.url_oficial ? `<a href="${p.url_oficial}" target="_blank" class="btn-ext btn-brand">🌐 Ref/Especificaciones</a>` : '';
+                            const btnCanva = p.url_canva ? `<a href="${p.url_canva}" target="_blank" class="btn-ext btn-canva">🎬 Conoce más!</a>` : '';
+
+                            cont.innerHTML += `
+                                <div class="card">
+                                    <img src="${p.imagen_url}" onerror="this.src='https://via.placeholder.com/280x180?text=Sin+Imagen'">
+                                    <div class="card-body">
+                                        <div>
+                                            <h3>${p.nombre}</h3>
+                                            ${htmlSpecs}
+                                        </div>
+                                        <div>
+                                            <div class="precio-box">
+                                                <span class="precio-ref">Precio: $${p.precio_referencial.toFixed(0)}</span>
+                                                <span class="precio-out">Outlet: $${p.precio_outlet.toFixed(0)}</span>
+                                            </div>
+                                            <div class="extra-links">
+                                                ${btnOficial}
+                                                ${btnCanva}
+                                            </div>
+                                            <a href="https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(p.mensaje_compra)}" class="btn-wa" target="_blank">Lo quiero!</a>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+
+                // PRODUCTOS
+                } else if (catFiltro && subFiltro) {
+                    tit.innerText = `${catFiltro} / ${subFiltro}`;
+                    btnHomeCatalog.style.display = "inline-block";
+                    btnBack.style.display = "inline-block";
+                    btnBack.href = `?cat=${encodeURIComponent(catFiltro)}`; 
+                    btnBack.innerText = "← Volver a " + catFiltro;
+                    
+                    const productosFiltrados = productosActivos.filter(p => perteneceARuta(p, catFiltro, subFiltro));
+
+                    if (productosFiltrados.length === 0) {
+                        cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay productos disponibles en esta sección actualmente.</p>`;
+                    } else {
+                        productosFiltrados.forEach(p => {
+                            const htmlSpecs = p.caracteristicas ? `<p class="caracteristicas-text">${formatDisplaySpecs(p.caracteristicas)}</p>` : '';
+                            const btnOficial = p.url_oficial ? `<a href="${p.url_oficial}" target="_blank" class="btn-ext btn-brand">🌐 Ref/Especificaciones</a>` : '';
+                            const btnCanva = p.url_canva ? `<a href="${p.url_canva}" target="_blank" class="btn-ext btn-canva">🎬 Conoce más!</a>` : '';
+
+                            cont.innerHTML += `
+                                <div class="card">
+                                    <img src="${p.imagen_url}" onerror="this.src='https://via.placeholder.com/280x180?text=Sin+Imagen'">
+                                    <div class="card-body">
+                                        <div>
+                                            <h3>${p.nombre}</h3>
+                                            ${htmlSpecs}
+                                        </div>
+                                        <div>
+                                            <div class="precio-box">
+                                                <span class="precio-ref">Precio: $${p.precio_referencial.toFixed(0)}</span>
+                                                <span class="precio-out">Outlet: $${p.precio_outlet.toFixed(0)}</span>
+                                            </div>
+                                            <div class="extra-links">
+                                                ${btnOficial}
+                                                ${btnCanva}
+                                            </div>
+                                            <a href="https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(p.mensaje_compra)}" class="btn-wa" target="_blank">Lo quiero!</a>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+
+                // SUBCATEGORÍAS (Con imágenes personalizadas y respaldo)
+                } else if (catFiltro) {
+                    tit.innerText = catFiltro;
+                    btnHomeCatalog.style.display = "inline-block";
+                    btnBack.style.display = "none";
+                    
+                    const subsDisponibles = new Set();
+                    productosActivos.forEach(p => {
+                        p.rutas_array.forEach(ruta => {
+                            const partes = ruta.split('>').map(p => p.trim());
+                            if (partes[0] === catFiltro && partes[1]) {
+                                subsDisponibles.add(partes[1]);
+                            }
+                        });
+                    });
+
+                    if (subsDisponibles.size === 0) {
+                        cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay subcategorías con stock disponible.</p>`;
+                    } else {
+                        subsDisponibles.forEach(s => {
+                            // Aquí se busca en el nuevo diccionario de subcategorías
+                            const imgFija = imagenesSubcategorias[s] || `https://via.placeholder.com/280x180?text=${encodeURIComponent(s)}`;
+                            cont.innerHTML += `
+                                <a href="?cat=${encodeURIComponent(catFiltro)}&sub=${encodeURIComponent(s)}" class="card">
+                                    <img src="${imgFija}" onerror="this.src='https://via.placeholder.com/280x180?text=${encodeURIComponent(s)}'">
+                                    <div class="card-body">
+                                        <h3>${s}</h3>
+                                        <p style="color:#0056b3; font-weight:bold;">Ver productos →</p>
+                                    </div>
+                                </a>`;
+                        });
+                    }
+
+                // VISTA PRINCIPAL (Categorías) - No había código para el 'else', aquí un ejemplo básico o dejar vacío si el HTML lo maneja
+                } else {
+                    cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">Selecciona una categoría desde el menú principal.</p>`;
+                }
+            })
+            .catch(error => {
+                console.error("Error cargando el catálogo:", error);
+                document.getElementById('contenedor').innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:red;">Hubo un error cargando los productos. Revisa la consola para más detalles.</p>`;
+            });
+    </script>
+</body>
+</html>
