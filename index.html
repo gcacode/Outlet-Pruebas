@@ -254,12 +254,10 @@
                     
                     const query = normalizeText(searchFiltro);
                     
-                   const productosFiltrados = productosActivos.filter(p => {
+                    const productosFiltrados = productosActivos.filter(p => {
                         const nombreProd = normalizeText(p.nombre);
                         const caracProd = normalizeText(p.caracteristicas);
-    
                         const regex = new RegExp(`\\b${query}\\b`, 'i');
-    
                         return regex.test(nombreProd) || regex.test(caracProd);
                     });
 
@@ -371,7 +369,6 @@
                         cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay subcategorías con stock disponible.</p>`;
                     } else {
                         subsDisponibles.forEach(s => {
-                            // Aquí se busca en el nuevo diccionario de subcategorías
                             const imgFija = imagenesSubcategorias[s] || `https://via.placeholder.com/280x180?text=${encodeURIComponent(s)}`;
                             cont.innerHTML += `
                                 <a href="?cat=${encodeURIComponent(catFiltro)}&sub=${encodeURIComponent(s)}" class="card">
@@ -384,9 +381,37 @@
                         });
                     }
 
-                // VISTA PRINCIPAL (Categorías) - No había código para el 'else', aquí un ejemplo básico o dejar vacío si el HTML lo maneja
+                // VISTA PRINCIPAL (Categorías principales dinámicas)
                 } else {
-                    cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">Selecciona una categoría desde el menú principal.</p>`;
+                    tit.innerText = "Algo que te sorprende, siempre!";
+                    btnHomeCatalog.style.display = "none";
+                    btnBack.style.display = "none";
+
+                    const categoriasDisponibles = new Set();
+                    productosActivos.forEach(p => {
+                        p.rutas_array.forEach(ruta => {
+                            const partes = ruta.split('>').map(p => p.trim());
+                            if (partes[0]) {
+                                categoriasDisponibles.add(partes[0]);
+                            }
+                        });
+                    });
+
+                    if (categoriasDisponibles.size === 0) {
+                        cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay categorías con stock disponible.</p>`;
+                    } else {
+                        categoriasDisponibles.forEach(cat => {
+                            const imgFija = imagenesCategorias[cat] || `https://via.placeholder.com/280x180?text=${encodeURIComponent(cat)}`;
+                            cont.innerHTML += `
+                                <a href="?cat=${encodeURIComponent(cat)}" class="card">
+                                    <img src="${imgFija}" onerror="this.src='https://via.placeholder.com/280x180?text=${encodeURIComponent(cat)}'">
+                                    <div class="card-body">
+                                        <h3>${cat}</h3>
+                                        <p style="color:#0056b3; font-weight:bold;">Ver subcategorías →</p>
+                                    </div>
+                                </a>`;
+                        });
+                    }
                 }
             })
             .catch(error => {
