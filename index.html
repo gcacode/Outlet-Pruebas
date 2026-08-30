@@ -107,6 +107,16 @@
             "Audio & Video": "./assets/img/audio.jpg"
         };
 
+        // Diccionario de imágenes personalizadas para las subcategorías
+        const imagenesSubcategorias = {
+            "Cocina": "./assets/img/cocina.jpg",
+            "Dormitorio": "./assets/img/dormitorio.jpg",
+            "Hombre": "./assets/img/hombre.jpg",
+            "Mujer": "./assets/img/mujer.jpg",
+            "Accesorios": "./assets/img/accesorios.jpg"
+            // Reemplaza estos ejemplos con los nombres exactos de tus subcategorías
+        };
+
         const normalizeText = (text) => {
             if (!text) return "";
             return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -324,7 +334,7 @@
                         });
                     }
 
-                // SUBCATEGORÍAS
+                // SUBCATEGORÍAS (Con imágenes personalizadas y respaldo)
                 } else if (catFiltro) {
                     tit.innerText = catFiltro;
                     btnHomeCatalog.style.display = "inline-block";
@@ -344,46 +354,17 @@
                         cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay subcategorías con stock disponible.</p>`;
                     } else {
                         subsDisponibles.forEach(s => {
-                            const imgFija = `https://via.placeholder.com/280x180?text=${encodeURIComponent(s)}`;
-                            cont.innerHTML += `<a href="?cat=${encodeURIComponent(catFiltro)}&sub=${encodeURIComponent(s)}" class="card"><img src="${imgFija}"><div class="card-body"><h3>${s}</h3><p style="color:#0056b3; font-weight:bold;">Ver productos →</p></div></a>`;
-                        });
-                    }
-
-                // VISTA PRINCIPAL (Con imágenes personalizadas y respaldo)
-                } else {
-                    btnHomeCatalog.style.display = "none";
-                    btnBack.style.display = "none";
-
-                    const catsDisponibles = new Set();
-                    productosActivos.forEach(p => {
-                        p.rutas_array.forEach(ruta => {
-                            const partes = ruta.split('>').map(p => p.trim());
-                            if (partes[0]) {
-                                catsDisponibles.add(partes[0]);
-                            }
-                        });
-                    });
-
-                    if (catsDisponibles.size === 0) {
-                        cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">El catálogo se encuentra vacío por el momento.</p>`;
-                    } else {
-                        catsDisponibles.forEach(c => {
-                            const imgFija = imagenesCategorias[c] || `https://via.placeholder.com/280x180?text=${encodeURIComponent(c)}`;
+                            // Aquí se busca en el nuevo diccionario de subcategorías
+                            const imgFija = imagenesSubcategorias[s] || `https://via.placeholder.com/280x180?text=${encodeURIComponent(s)}`;
                             cont.innerHTML += `
-                                <a href="?cat=${encodeURIComponent(c)}" class="card">
-                                    <img src="${imgFija}" onerror="this.src='https://via.placeholder.com/280x180?text=${encodeURIComponent(c)}'">
+                                <a href="?cat=${encodeURIComponent(catFiltro)}&sub=${encodeURIComponent(s)}" class="card">
+                                    <img src="${imgFija}" onerror="this.src='https://via.placeholder.com/280x180?text=${encodeURIComponent(s)}'">
                                     <div class="card-body">
-                                        <h3>${c}</h3>
-                                        <p style="color:#0056b3; font-weight:bold;">justo para ti! →</p>
+                                        <h3>${s}</h3>
+                                        <p style="color:#0056b3; font-weight:bold;">Ver productos →</p>
                                     </div>
                                 </a>`;
                         });
                     }
-                }
-            })
-            .catch(err => {
-                document.getElementById('contenedor').innerHTML = `<p style="color:red; text-align:center; grid-column:1/-1;">Error al cargar datos de inventario.</p>`;
-            });
-    </script>
-</body>
-</html>
+
+                // VISTA PRINCIPAL
