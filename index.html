@@ -98,7 +98,6 @@
         const WA_NUMERO = "593994411299"; 
         const CSV_URL = "https://docs.google.com/spreadsheets/d/168Qg4rnF4Kjj0Y8RDKzQYov4ek3t0vrtarHTcc9qVxo/export?format=csv&gid=0";
 
-        // Diccionario de imágenes personalizadas para las categorías principales
         const imagenesCategorias = {
             "Hogar & Oficina": "./assets/img/h&o.jpg",
             "Vestimenta": "./assets/img/vestimenta.jpg",
@@ -108,7 +107,6 @@
             "Higiene & Cuidado Personal": "./assets/img/cuidado.jpg"
         };
 
-        // Diccionario de imágenes personalizadas para las subcategorías
         const imagenesSubcategorias = {
             "Modulares": "./assets/img/modulares.jpg",
             "Decoración": "./assets/img/deco.jpg",
@@ -136,18 +134,35 @@
 
         const normalizeText = (text) => {
             if (!text) return "";
-            return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            return text.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
         };
+
+        // Búsqueda inteligente de imágenes tolerante a tildes y mayúsculas
+        function getImagenCategoria(catName) {
+            if (imagenesCategorias[catName]) return imagenesCategorias[catName];
+            const norm = normalizeText(catName);
+            for (const key in imagenesCategorias) {
+                if (normalizeText(key) === norm) return imagenesCategorias[key];
+            }
+            return `https://via.placeholder.com/280x180?text=${encodeURIComponent(catName)}`;
+        }
+
+        function getImagenSubcategoria(subName) {
+            if (imagenesSubcategorias[subName]) return imagenesSubcategorias[subName];
+            const norm = normalizeText(subName);
+            for (const key in imagenesSubcategorias) {
+                if (normalizeText(key) === norm) return imagenesSubcategorias[key];
+            }
+            return `https://via.placeholder.com/280x180?text=${encodeURIComponent(subName)}`;
+        }
 
         function formatDisplaySpecs(text) {
             if (!text) return '';
             let displaySpecs = text;
             const tagIndex = displaySpecs.toUpperCase().indexOf("TAGS:");
-            
             if (tagIndex !== -1) {
                 displaySpecs = displaySpecs.substring(0, tagIndex).trim();
             }
-            
             return displaySpecs.replace(/\n/g, '<br>');
         }
 
@@ -189,7 +204,8 @@
                 return cols;
             };
 
-            const headers = parseRow(rows[0]).map(h => h.replace(/^"|"$/g, '').toLowerCase().trim());
+            // Limpieza de caracteres invisibles (BOM) en las cabeceras
+            const headers = parseRow(rows[0]).map(h => h.replace(/^\ufeff/, '').replace(/^"|"$/g, '').toLowerCase().trim());
 
             for (let i = 1; i < rows.length; i++) {
                 const cols = parseRow(rows[i]);
@@ -197,8 +213,18 @@
                 for (let j = 0; j < headers.length; j++) {
                     obj[headers[j]] = cols[j] ? cols[j].replace(/^"|"$/g, '') : '';
                 }
-                obj.rutas_array = obj.rutas ? obj.rutas.split(',').map(r => r.trim()) : [];
-                obj.stock = Number(obj.stock) || 0;
+                obj.rutas_array = obj.rutas ? obj.rutas.split(',').map(r => r.trim()).filter(r => r.length > 0) : [];
+                
+                // Manejo de stock flexible (evita bloqueos si la celda está vacía)
+                let stockVal = obj.stock.toString().toLowerCase().trim();
+                if (stockVal === "" || stockVal === "si" || stockVal === "disponible") {
+                    obj.stock = 1;
+                } else if (stockVal === "no" || stockVal === "0" || stockVal === "agotado") {
+                    obj.stock = 0;
+                } else {
+                    obj.stock = Number(obj.stock) || 0;
+                }
+
                 obj.precio_referencial = Number(obj.precio_referencial) || 0;
                 obj.precio_outlet = Number(obj.precio_outlet) || 0;
                 result.push(obj);
@@ -206,13 +232,18 @@
             return result;
         }
 
+        // Validación de rutas insensible a mayúsculas y tildes
         function perteneceARuta(producto, categoria, subcategoria) {
             return producto.rutas_array.some(ruta => {
                 const partes = ruta.split('>').map(p => p.trim());
+                const catPart = normalizeText(partes[0]);
+                const targetCat = normalizeText(categoria);
                 if (subcategoria) {
-                    return partes[0] === categoria && partes[1] === subcategoria;
+                    const subPart = normalizeText(partes[1]);
+                    const targetSub = normalizeText(subcategoria);
+                    return catPart === targetCat && subPart === targetSub;
                 }
-                return partes[0] === categoria;
+                return catPart === targetCat;
             });
         }
 
@@ -227,7 +258,7 @@
             if(val !== '') {
                 window.location.href = `?q=${encodeURIComponent(val)}`;
             } else {
-                window.location.href = 'index.html';
+                window.location.href = window.location.pathname;
             }
         });
 
@@ -307,7 +338,7 @@
                         });
                     }
 
-                // PRODUCTOS
+                // PRODUCTOS DE UNA SUBCATEGORÍA
                 } else if (catFiltro && subFiltro) {
                     tit.innerText = `${catFiltro} / ${subFiltro}`;
                     btnHomeCatalog.style.display = "inline-block";
@@ -349,18 +380,22 @@
                         });
                     }
 
-                // SUBCATEGORÍAS (Con imágenes personalizadas y respaldo)
+                // SUBCATEGORÍAS (Recopilación robusta mediante Map)
                 } else if (catFiltro) {
                     tit.innerText = catFiltro;
                     btnHomeCatalog.style.display = "inline-block";
                     btnBack.style.display = "none";
                     
-                    const subsDisponibles = new Set();
+                    const subsDisponibles = new Map();
                     productosActivos.forEach(p => {
                         p.rutas_array.forEach(ruta => {
-                            const partes = ruta.split('>').map(p => p.trim());
-                            if (partes[0] === catFiltro && partes[1]) {
-                                subsDisponibles.add(partes[1]);
+                            const partes = ruta.split('>').map(x => x.trim());
+                            if (partes[0] && normalizeText(partes[0]) === normalizeText(catFiltro) && partes[1]) {
+                                const subOriginal = partes[1];
+                                const subNorm = normalizeText(subOriginal);
+                                if (!subsDisponibles.has(subNorm)) {
+                                    subsDisponibles.set(subNorm, subOriginal);
+                                }
                             }
                         });
                     });
@@ -369,7 +404,7 @@
                         cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay subcategorías con stock disponible.</p>`;
                     } else {
                         subsDisponibles.forEach(s => {
-                            const imgFija = imagenesSubcategorias[s] || `https://via.placeholder.com/280x180?text=${encodeURIComponent(s)}`;
+                            const imgFija = getImagenSubcategoria(s);
                             cont.innerHTML += `
                                 <a href="?cat=${encodeURIComponent(catFiltro)}&sub=${encodeURIComponent(s)}" class="card">
                                     <img src="${imgFija}" onerror="this.src='https://via.placeholder.com/280x180?text=${encodeURIComponent(s)}'">
@@ -381,18 +416,22 @@
                         });
                     }
 
-                // VISTA PRINCIPAL (Categorías principales dinámicas)
+                // VISTA PRINCIPAL DE CATEGORÍAS (Recopilación robusta mediante Map)
                 } else {
                     tit.innerText = "Algo que te sorprende, siempre!";
                     btnHomeCatalog.style.display = "none";
                     btnBack.style.display = "none";
 
-                    const categoriasDisponibles = new Set();
+                    const categoriasDisponibles = new Map();
                     productosActivos.forEach(p => {
                         p.rutas_array.forEach(ruta => {
-                            const partes = ruta.split('>').map(p => p.trim());
+                            const partes = ruta.split('>').map(x => x.trim());
                             if (partes[0]) {
-                                categoriasDisponibles.add(partes[0]);
+                                const catOriginal = partes[0];
+                                const catNorm = normalizeText(catOriginal);
+                                if (!categoriasDisponibles.has(catNorm)) {
+                                    categoriasDisponibles.set(catNorm, catOriginal);
+                                }
                             }
                         });
                     });
@@ -401,7 +440,7 @@
                         cont.innerHTML = `<p style="grid-column: 1/-1; text-align:center;">No hay categorías con stock disponible.</p>`;
                     } else {
                         categoriasDisponibles.forEach(cat => {
-                            const imgFija = imagenesCategorias[cat] || `https://via.placeholder.com/280x180?text=${encodeURIComponent(cat)}`;
+                            const imgFija = getImagenCategoria(cat);
                             cont.innerHTML += `
                                 <a href="?cat=${encodeURIComponent(cat)}" class="card">
                                     <img src="${imgFija}" onerror="this.src='https://via.placeholder.com/280x180?text=${encodeURIComponent(cat)}'">
